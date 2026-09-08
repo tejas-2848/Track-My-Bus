@@ -237,25 +237,43 @@
           </div>
         </div>
 
-        <!-- Route Stepper -->
-        <div class="card">
-          <div class="flex-between">
-            <div class="route-progress-label">Journey Route Progress</div>
-            <span class="text-xs text-primary" id="track-route-total-dist">Total: 106 km</span>
+        <!-- Live Trip Overview Info (Image 3 Style) -->
+        <div class="card trip-info-overview-card">
+          <div class="trip-overview-item">
+            <div class="trip-overview-label">Previous stop</div>
+            <div class="trip-overview-value" id="trip-prev-stop">Chandori Stand</div>
           </div>
-          <div class="timeline-stepper">
-            <div class="timeline-step completed">
-              <div class="step-circle">✓</div>
-              <div class="step-name" id="timeline-prev-stop">Chandori</div>
-            </div>
-            <div class="timeline-step current">
-              <div class="step-circle">🚌</div>
-              <div class="step-name" id="timeline-curr-stop">Niphad Stand</div>
-            </div>
-            <div class="timeline-step">
-              <div class="step-circle">🏁</div>
-              <div class="step-name" id="timeline-next-dest">Yeola Stand</div>
-            </div>
+          <div class="trip-overview-divider"></div>
+          <div class="trip-overview-item">
+            <div class="trip-overview-label">Location Name</div>
+            <div class="trip-overview-value" id="trip-curr-loc">NH 753J Highway (Near Niphad)</div>
+          </div>
+          <div class="trip-overview-divider"></div>
+          <div class="trip-overview-item">
+            <div class="trip-overview-label">Next Stop</div>
+            <div class="trip-overview-value" id="trip-next-stop">Niphad Bus Stand</div>
+          </div>
+          <div class="trip-overview-divider"></div>
+          <div class="trip-overview-item">
+            <div class="trip-overview-label">Refresh at</div>
+            <div class="trip-overview-value" id="trip-refresh-time">08-09-2026 14:35:00</div>
+          </div>
+        </div>
+
+        <!-- Trip Details Vertical Timeline (Image 1 & 2 Style) -->
+        <div class="card trip-details-card">
+          <div class="trip-details-header-row">
+            <div class="trip-route-badge" id="trip-route-no">Route No : 101</div>
+            <div class="trip-passengers-count" id="trip-passengers-count">Passengers Count : 28</div>
+          </div>
+
+          <div class="trip-table-header">
+            <span>Stop Name</span>
+            <span>Arrival/ Departure</span>
+          </div>
+
+          <div class="trip-vertical-timeline" id="trip-vertical-timeline-container">
+            <!-- Dynamically populated from bus intermediate stops -->
           </div>
         </div>
       </section>

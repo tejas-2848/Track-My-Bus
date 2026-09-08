@@ -1197,70 +1197,266 @@ body.dark-mode .telemetry-overlay-strip {
   animation: navDotBlink 1.2s infinite;
 }
 
-/* Visual Timeline Progress */
-.timeline-stepper {
+/* --------------------------------------------------------------------------
+   TRIP OVERVIEW & VERTICAL TIMELINE PROGRESS (CITILINC / MSRTC STYLE)
+   -------------------------------------------------------------------------- */
+
+/* Live Trip Overview Card (Image 3 Style) */
+.trip-info-overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+.trip-overview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trip-overview-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.trip-overview-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+
+.trip-overview-divider {
+  height: 1px;
+  border-bottom: 1px dashed var(--border-subtle);
+  margin: 2px 0;
+}
+
+/* Trip Details Vertical Timeline Card (Image 1 & 2 Style) */
+.trip-details-card {
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+.trip-details-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: relative;
-  margin: 20px 10px;
+  padding-bottom: 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed var(--border-subtle);
 }
 
-.timeline-stepper::before {
+.trip-route-badge {
+  font-size: 13px;
+  font-weight: 800;
+  color: #4F46E5;
+}
+
+body.dark-mode .trip-route-badge {
+  color: #818CF8;
+}
+
+.trip-passengers-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4F46E5;
+}
+
+body.dark-mode .trip-passengers-count {
+  color: #818CF8;
+}
+
+.trip-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #F1F5F9;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+body.dark-mode .trip-table-header {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.trip-vertical-timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: 4px 0 4px 6px;
+}
+
+/* Individual Stop Row */
+.trip-stop-row {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  padding-bottom: 22px;
+}
+
+.trip-stop-row:last-child {
+  padding-bottom: 6px;
+}
+
+/* Continuous Vertical Connecting Line */
+.trip-stop-row::before {
   content: '';
   position: absolute;
+  left: 9px;
   top: 14px;
-  left: 10%;
-  right: 10%;
-  height: 4px;
-  background-color: var(--border-subtle);
-  z-index: 0;
+  bottom: -4px;
+  width: 2px;
+  background-color: #CBD5E1;
+  z-index: 1;
 }
 
-.timeline-step {
+.trip-stop-row.covered::before {
+  background-color: #5C6BC0;
+}
+
+.trip-stop-row.upcoming::before {
+  background-color: #00BCD4;
+}
+
+.trip-stop-row:last-child::before {
+  display: none;
+}
+
+/* Node Column (Dots and Bus Badge) */
+.trip-node-col {
+  width: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  z-index: 1;
-  background-color: var(--bg-card);
-  padding: 0 4px;
+  justify-content: flex-start;
+  z-index: 2;
+  margin-right: 12px;
+  flex-shrink: 0;
 }
 
-.step-circle {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-full);
-  background-color: var(--border-subtle);
-  color: var(--text-muted);
+.trip-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+.trip-dot.covered {
+  background-color: #5C6BC0;
+  box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.2);
+}
+
+.trip-dot.upcoming {
+  background-color: #00BCD4;
+  box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.2);
+}
+
+.trip-dot.current {
+  background-color: #5C6BC0;
+}
+
+.trip-bus-inline-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #10B981;
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: 13px;
+  margin-top: 4px;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+  animation: pulseStep 1.8s infinite;
 }
 
-.timeline-step.completed .step-circle {
-  background-color: var(--status-green);
-  color: white;
+/* Stop Info Column */
+.trip-content-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
 }
 
-.timeline-step.current .step-circle {
-  background-color: var(--primary-blue);
-  color: white;
-  box-shadow: 0 0 0 6px var(--primary-blue-light);
-  animation: pulseStep 1.5s infinite;
-}
-
-@keyframes pulseStep {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-}
-
-.step-name {
-  font-size: 11px;
+.trip-stop-title {
+  font-size: 13.5px;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-main);
+}
+
+.trip-stop-status {
+  font-size: 11px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.trip-stop-status.covered {
+  color: #5C6BC0;
+}
+
+.trip-stop-status.upcoming {
+  color: #00BCD4;
+}
+
+.trip-stop-status.current {
+  color: #10B981;
+  font-weight: 700;
+}
+
+/* Time & Alert Bell Column */
+.trip-time-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.trip-time-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  min-width: 44px;
+}
+
+.btn-stop-alert-bell {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #D97706;
+  padding: 2px 4px;
+  transition: transform 0.2s ease;
+}
+
+.btn-stop-alert-bell:hover {
+  transform: scale(1.2);
+}
+
+.btn-stop-alert-bell.active {
+  animation: bellRing 0.5s ease;
+  filter: drop-shadow(0 0 4px #F59E0B);
+}
+
+@keyframes bellRing {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(15deg); }
+  75% { transform: rotate(-15deg); }
 }
 
 /* --------------------------------------------------------------------------

@@ -435,6 +435,104 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
+  // Format trip timestamp as DD-MM-YYYY HH:mm:ss (like in image 3)
+  function formatTripTimestamp(d = new Date()) {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    const secs = String(d.getSeconds()).padStart(2, '0');
+    return `${day}-${month}-${year} ${hours}:${mins}:${secs}`;
+  }
+
+  // Render Trip Overview & Vertical Timeline (CITILINC / MSRTC style from uploaded images)
+  function renderTripDetailsTimeline(bus) {
+    // 1. Live Trip Overview Card (Image 3)
+    const prevStopEl = document.getElementById('trip-prev-stop');
+    const currLocEl = document.getElementById('trip-curr-loc');
+    const nextStopEl = document.getElementById('trip-next-stop');
+    const refreshTimeEl = document.getElementById('trip-refresh-time');
+
+    if (prevStopEl) prevStopEl.textContent = bus.previousStop || 'Terminal Stand';
+    if (currLocEl) currLocEl.textContent = `NH 753J (Near ${bus.nextStop.replace(' Bus Stop', '').replace(' Stand', '')} Corridor)`;
+    if (nextStopEl) nextStopEl.textContent = bus.nextStop;
+    if (refreshTimeEl) refreshTimeEl.textContent = formatTripTimestamp();
+
+    // 2. Trip Details Header Row (Image 1 & 2)
+    const routeNoEl = document.getElementById('trip-route-no');
+    const passCountEl = document.getElementById('trip-passengers-count');
+
+    if (routeNoEl) routeNoEl.textContent = `Route No : ${bus.id.replace('BUS-', '')} (${bus.routeId || '101'})`;
+    if (passCountEl) {
+      const seats = bus.occupancy ? bus.occupancy.split(' ')[0] : '28';
+      passCountEl.textContent = `Passengers Count : ${seats}`;
+    }
+
+    // 3. Vertical Timeline List (Image 1 & 2)
+    const container = document.getElementById('trip-vertical-timeline-container');
+    if (!container || !bus.intermediateStops) return;
+
+    container.innerHTML = '';
+
+    // Find index of current target stop
+    let currentIdx = bus.intermediateStops.findIndex(s => s.isCurrentTarget || s.name === bus.nextStop);
+    if (currentIdx === -1) currentIdx = 2;
+
+    bus.intermediateStops.forEach((st, idx) => {
+      const isCovered = idx < currentIdx;
+      const isCurrent = idx === currentIdx;
+      const isUpcoming = idx > currentIdx;
+
+      let statusClass = 'upcoming';
+      let statusLabel = 'To be Covered';
+      let timeText = st.time || '-';
+
+      if (isCovered) {
+        statusClass = 'covered';
+        statusLabel = 'Covered';
+      } else if (isCurrent) {
+        statusClass = 'current';
+        statusLabel = 'Next Stop • Approaching';
+        timeText = `${st.time} (${bus.etaMinutes}m)`;
+      }
+
+      const row = document.createElement('div');
+      row.className = `trip-stop-row ${statusClass}`;
+
+      row.innerHTML = `
+        <div class="trip-node-col">
+          <div class="trip-dot ${statusClass}"></div>
+          ${isCurrent ? '<div class="trip-bus-inline-badge">🚌</div>' : ''}
+        </div>
+        <div class="trip-content-col">
+          <div class="trip-stop-title">${st.name}</div>
+          <div class="trip-stop-status ${statusClass}">${statusLabel}</div>
+        </div>
+        <div class="trip-time-col">
+          <span class="trip-time-text">${timeText}</span>
+          ${isUpcoming ? `<button class="btn-stop-alert-bell" data-stop="${st.name}" title="Set reminder for ${st.name}">🔔</button>` : ''}
+        </div>
+      `;
+
+      container.appendChild(row);
+    });
+
+    // Wire up reminder bells
+    container.querySelectorAll('.btn-stop-alert-bell').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const stopName = e.currentTarget.dataset.stop;
+        const isActive = e.currentTarget.classList.toggle('active');
+        if (isActive) {
+          showToast(`🔔 Reminder alert set for ${stopName}!`);
+        } else {
+          showToast(`🔕 Reminder removed for ${stopName}`);
+        }
+      });
+    });
+  }
+
   function renderTrackingScreen() {
     const bus = state.selectedBus;
     const stop = state.activeStop;
@@ -452,10 +550,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const roadInfoEl = document.getElementById('track-bus-road-info');
     if (roadInfoEl) roadInfoEl.textContent = `Via ${bus.via.split(',')[0]}`;
 
-    // Timeline Updates
-    document.getElementById('timeline-prev-stop').textContent = bus.previousStop.split(' ')[0];
-    document.getElementById('timeline-curr-stop').textContent = stop.name.replace(' Bus Stop', '');
-    document.getElementById('timeline-next-dest').textContent = bus.destination.split(' ')[0];
+    // Render CITILINC/MSRTC Style Trip Overview & Vertical Timeline
+    renderTripDetailsTimeline(bus);
 
     // Quick chips
     renderMapBusChips();
@@ -694,6 +790,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (pSpeed) pSpeed.textContent = `${speed} km/h`;
       if (pDist) pDist.textContent = `${remainingKm.toFixed(1)} km`;
       if (pEta) pEta.textContent = `${etaMins} mins`;
+
+      // Update trip overview live refresh timestamp
+      const refreshEl = document.getElementById('trip-refresh-time');
+      if (refreshEl) refreshEl.textContent = formatTripTimestamp();
 
     }, 1800);
   }
