@@ -335,19 +335,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return total;
   }
 
-  // Watermark-Free High Quality Tile Layers (Esri Street, OSM Standard, OSM HOT, Esri Satellite)
+  // Watermark-Free High Quality Tile Layers (Default: OpenStreetMap Standard)
   const MAP_TILE_LAYERS = [
-    {
-      name: 'Clean Street Map (Google Style)',
-      icon: '🗺️',
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-      options: { maxZoom: 19, attribution: '© Esri • Where\'s My Bus?' }
-    },
     {
       name: 'OpenStreetMap Standard',
       icon: '🚏',
       url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      options: { maxZoom: 19, attribution: '© OpenStreetMap contributors' }
+      options: { maxZoom: 19, attribution: '© OpenStreetMap contributors • Where\'s My Bus?' }
+    },
+    {
+      name: 'Clean Street Map (Esri)',
+      icon: '🗺️',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      options: { maxZoom: 19, attribution: 'Tiles © Esri' }
     },
     {
       name: 'Humanitarian Transit',
