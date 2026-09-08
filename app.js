@@ -497,6 +497,8 @@ document.addEventListener('DOMContentLoaded', () => {
         timeText = `${st.time} (${bus.etaMinutes}m)`;
       }
 
+      const displayName = (state.currentLanguage === 'mr' && st.nameMr) ? st.nameMr : st.name;
+
       const row = document.createElement('div');
       row.className = `trip-stop-row ${statusClass}`;
 
@@ -506,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${isCurrent ? '<div class="trip-bus-inline-badge">🚌</div>' : ''}
         </div>
         <div class="trip-content-col">
-          <div class="trip-stop-title">${st.name}</div>
+          <div class="trip-stop-title">${displayName}</div>
           <div class="trip-stop-status ${statusClass}">${statusLabel}</div>
         </div>
         <div class="trip-time-col">
@@ -517,6 +519,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       container.appendChild(row);
     });
+
+    // Auto-scroll timeline to the current approaching stop
+    setTimeout(() => {
+      const currentStopEl = container.querySelector('.trip-stop-row.current');
+      if (currentStopEl) {
+        currentStopEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }, 150);
 
     // Wire up reminder bells
     container.querySelectorAll('.btn-stop-alert-bell').forEach(btn => {
@@ -682,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
             iconAnchor: [7, 7]
           });
           const m = L.marker([st.lat, st.lng], { icon: wpIcon }).addTo(state.mapInstance)
-            .bindPopup(`<b>${st.name}</b><br>Scheduled: <strong>${st.time}</strong><br>Status: ${st.status}`);
+            .bindPopup(`<b>${st.name}</b>${st.nameMr ? `<br><span style="font-size:11px; color:#64748B;">${st.nameMr}</span>` : ''}<br>Scheduled: <strong>${st.time}</strong><br>Status: ${st.status}`);
           state.intermediateMarkers.push(m);
         }
       });
@@ -937,11 +947,13 @@ document.addEventListener('DOMContentLoaded', () => {
     container.innerHTML = '';
     bus.intermediateStops.forEach(st => {
       const isTarget = st.isCurrentTarget;
+      const displayName = (state.currentLanguage === 'mr' && st.nameMr) ? st.nameMr : st.name;
+      const targetLabel = isTarget ? (state.currentLanguage === 'mr' ? '📍 (लक्षित थांबा)' : '📍 (Target Stop)') : '';
       const html = `
         <div class="stop-timeline-row ${isTarget ? 'active' : ''}">
           <div class="stop-dot"></div>
           <div class="stop-info">
-            <div class="name">${st.name} ${isTarget ? '📍 (Your Stop)' : ''}</div>
+            <div class="name">${displayName} ${targetLabel}</div>
             <div class="time">Time: <strong>${st.time}</strong> | Status: <span class="badge ${isTarget ? 'badge-green' : 'badge-grey'}">${st.status}</span></div>
           </div>
         </div>

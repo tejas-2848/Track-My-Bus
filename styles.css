@@ -1298,7 +1298,27 @@ body.dark-mode .trip-table-header {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding: 4px 0 4px 6px;
+  padding: 4px 8px 4px 6px;
+  max-height: 480px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.trip-vertical-timeline::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trip-vertical-timeline::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.trip-vertical-timeline::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 233, 0.25);
+  border-radius: 999px;
+}
+
+.trip-vertical-timeline::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.55);
 }
 
 /* Individual Stop Row */
