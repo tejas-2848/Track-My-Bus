@@ -1,5 +1,5 @@
 /**
- * SmartST - MSRTC Intelligent Bus Stop System
+ * Where's My Bus? - MSRTC Live Bus Tracking System
  * Database & Mock Telemetry Store for Rural Maharashtra
  */
 
@@ -10,8 +10,8 @@ const SMART_ST_DATA = {
   // Multilingual Support Dictionary
   i18n: {
     en: {
-      appName: "SmartST",
-      tagline: "Know before you wait",
+      appName: "Where's My Bus?",
+      tagline: "Track your bus in real-time",
       scanQrBtn: "Scan Bus Stop QR",
       demoBtn: "Try Demo Mode",
       busStop: "Bus Stop",
@@ -47,11 +47,11 @@ const SMART_ST_DATA = {
       marathi: "मराठी (Marathi)",
       english: "English",
       hindi: "हिंदी (Hindi)",
-      lowNetNotice: "Slow Network Detected - SmartST Offline Mode Active (Lightweight view)"
+      lowNetNotice: "Slow Network Detected - Where's My Bus? Offline Mode Active"
     },
     mr: {
-      appName: "स्मार्ट एस.टी.",
-      tagline: "थांबण्यापूर्वी वेळ जाणून घ्या",
+      appName: "माझी बस कुठे आहे?",
+      tagline: "तुमची बस रिअल-टाइम ट्रॅक करा",
       scanQrBtn: "बस स्थानक QR स्कॅन करा",
       demoBtn: "डेमो मोड वापरा",
       busStop: "बस थांबा",
@@ -87,11 +87,11 @@ const SMART_ST_DATA = {
       marathi: "मराठी (Marathi)",
       english: "English",
       hindi: "हिंदी (Hindi)",
-      lowNetNotice: "धीमी इंटरनेट गती - स्मार्ट एसटी लाईट मोड चालू आहे"
+      lowNetNotice: "धीमी इंटरनेट गती - माझी बस कुठे आहे? लाईट मोड चालू आहे"
     },
     hi: {
-      appName: "स्मार्ट एसटी",
-      tagline: "इंतजार करने से पहले जानें",
+      appName: "मेरी बस कहाँ है?",
+      tagline: "अपनी बस रियल-टाइम ट्रैक करें",
       scanQrBtn: "बस स्टॉप QR स्कैन करें",
       demoBtn: "डेमो मोड आज़माएं",
       busStop: "बस स्टॉप",
@@ -127,7 +127,7 @@ const SMART_ST_DATA = {
       marathi: "मराठी (Marathi)",
       english: "English",
       hindi: "हिंदी (Hindi)",
-      lowNetNotice: "धीमी इंटरनेट गति - स्मार्ट एसटी लाइट मोड सक्रिय"
+      lowNetNotice: "धीमी इंटरनेट गति - मेरी बस कहाँ है? लाइट मोड सक्रिय"
     }
   },
 

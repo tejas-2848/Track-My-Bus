@@ -1,15 +1,16 @@
 /* --------------------------------------------------------------------------
-   SmartST - MSRTC Intelligent Bus Stop System
+   Where's My Bus? - MSRTC Intelligent Bus Stop System
    Government-Grade Modern Rounded Design System (CSS Custom Properties)
    -------------------------------------------------------------------------- */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
 
 :root {
   /* Primary Palette */
-  --primary-blue: #0B63E5;
-  --primary-blue-hover: #084BB3;
-  --primary-blue-light: #EBF3FF;
+  --primary-blue: #0EA5E9;
+  --primary-blue-hover: #0284C7;
+  --primary-blue-light: #E0F2FE;
+  --primary-blue-rgb: 14, 165, 233;
   
   /* Accent & Status Colors */
   --accent-orange: #FF6B00;
@@ -26,11 +27,12 @@
   --msrtc-gold: #FFC107;
 
   /* Backgrounds & Surfaces */
-  --bg-main: #F4F7FC;
+  --bg-main: #F0F9FF;
   --bg-card: #FFFFFF;
+  --bg-card-rgb: 255, 255, 255;
   --bg-elevated: #FFFFFF;
   --border-subtle: #E2E8F0;
-  --border-focus: #0B63E5;
+  --border-focus: #0EA5E9;
 
   /* Typography */
   --text-main: #0F172A;
@@ -41,14 +43,14 @@
   /* Radius & Shadows */
   --radius-xs: 8px;
   --radius-sm: 12px;
-  --radius-md: 18px;
+  --radius-md: 20px; /* Increased to 20px */
   --radius-lg: 24px;
   --radius-full: 9999px;
 
   --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
   --shadow-md: 0 6px 20px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 12px 32px rgba(11, 99, 229, 0.12);
-  --shadow-glow: 0 0 24px rgba(11, 99, 229, 0.25);
+  --shadow-lg: 0 12px 32px rgba(14, 165, 233, 0.12);
+  --shadow-glow: 0 0 24px rgba(14, 165, 233, 0.25);
 
   /* Typography Sizes */
   --font-base: 16px;
@@ -73,6 +75,7 @@
 body.dark-mode {
   --bg-main: #0B132B;
   --bg-card: #1C2541;
+  --bg-card-rgb: 28, 37, 65;
   --bg-elevated: #2A365C;
   --border-subtle: #2E3C66;
   --text-main: #F8FAFC;
@@ -80,11 +83,13 @@ body.dark-mode {
   --text-muted: #64748B;
   --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
   --primary-blue-light: #1E293B;
+  --shadow-glow: 0 0 24px rgba(14, 165, 233, 0.5);
 }
 
 body.high-contrast {
   --bg-main: #000000;
   --bg-card: #111111;
+  --bg-card-rgb: 17, 17, 17;
   --bg-elevated: #222222;
   --border-subtle: #FFFF00;
   --text-main: #FFFFFF;
@@ -120,7 +125,7 @@ body.large-text-mode {
 html, body {
   width: 100%;
   height: 100%;
-  font-family: 'Inter', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Poppins', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
   font-size: var(--font-base);
@@ -142,7 +147,9 @@ html, body {
 /* Top App Header */
 .app-header {
   height: var(--header-height);
-  background-color: var(--bg-card);
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -152,6 +159,14 @@ html, body {
   top: 0;
   z-index: 100;
   box-shadow: var(--shadow-sm);
+}
+
+body.dark-mode .app-header {
+  background-color: rgba(28, 37, 65, 0.85);
+}
+
+body.high-contrast .app-header {
+  background-color: var(--bg-card);
 }
 
 .brand-section {
@@ -172,7 +187,7 @@ html, body {
   color: #FFF;
   font-weight: 800;
   font-size: 18px;
-  box-shadow: 0 2px 8px rgba(11, 99, 229, 0.3);
+  box-shadow: 0 2px 8px rgba(var(--primary-blue-rgb), 0.3);
 }
 
 .brand-title {
@@ -239,7 +254,9 @@ html, body {
 /* Bottom Navigation Bar */
 .bottom-nav {
   height: var(--nav-height);
-  background-color: var(--bg-card);
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -248,6 +265,14 @@ html, body {
   bottom: 0;
   z-index: 100;
   padding: 0 4px;
+}
+
+body.dark-mode .bottom-nav {
+  background-color: rgba(28, 37, 65, 0.85);
+}
+
+body.high-contrast .bottom-nav {
+  background-color: var(--bg-card);
 }
 
 .nav-item {
@@ -266,10 +291,11 @@ html, body {
   padding: 6px 0;
   transition: var(--transition-fast);
   text-decoration: none;
+  position: relative;
 }
 
 .nav-item .nav-icon {
-  font-size: 20px;
+  font-size: 24px; /* Increased from 20px */
 }
 
 .nav-item.active {
@@ -278,6 +304,16 @@ html, body {
 
 .nav-item.active .nav-icon {
   transform: scale(1.15);
+}
+
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--primary-blue);
 }
 
 /* Main View Container */
@@ -320,10 +356,10 @@ html, body {
 .card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md); /* 20px */
   padding: 16px;
   box-shadow: var(--shadow-sm);
-  transition: var(--transition-fast);
+  transition: transform var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--transition-smooth);
   position: relative;
   overflow: hidden;
 }
@@ -335,6 +371,7 @@ html, body {
 .card-clickable:hover {
   border-color: var(--primary-blue);
   box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .card-header-row {
@@ -348,8 +385,8 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
+  padding: 6px 12px; /* Slightly larger padding */
+  border-radius: 12px; /* Softer border-radius */
   font-size: 12px;
   font-weight: 700;
   line-height: 1;
@@ -376,7 +413,7 @@ html, body {
 .badge-blue {
   background-color: var(--primary-blue-light);
   color: var(--primary-blue);
-  border: 1px solid rgba(11, 99, 229, 0.3);
+  border: 1px solid rgba(var(--primary-blue-rgb), 0.3);
 }
 
 .badge-grey {
@@ -396,26 +433,38 @@ html, body {
   font-weight: 700;
   border: none;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: transform 0.1s ease, background-color var(--transition-fast), box-shadow var(--transition-fast);
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn-lg {
   padding: 16px 24px;
   font-size: 17px;
-  border-radius: var(--radius-md);
+  border-radius: 16px; /* Pill-shaped like requested */
   width: 100%;
+}
+
+.btn-lg:hover {
+  transform: scale(1.02);
+}
+.btn-lg:active {
+  transform: scale(0.98);
 }
 
 .btn-primary {
   background-color: var(--primary-blue);
   color: var(--text-on-primary);
-  box-shadow: 0 4px 14px rgba(11, 99, 229, 0.35);
+  box-shadow: 0 4px 14px rgba(var(--primary-blue-rgb), 0.35);
 }
 
-.btn-primary:hover, .btn-primary:active {
+.btn-primary:hover {
   background-color: var(--primary-blue-hover);
-  transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -439,19 +488,32 @@ html, body {
 }
 
 .btn-voice {
-  background: linear-gradient(135deg, #0B63E5, #7C3AED);
+  background: linear-gradient(135deg, var(--primary-blue), #7C3AED);
   color: #FFF;
   box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
-}
-
-.btn-voice:hover {
-  transform: scale(1.02);
 }
 
 .btn-sm {
   padding: 6px 12px;
   font-size: 12px;
   border-radius: var(--radius-xs);
+}
+
+/* CSS Ripple Effect */
+.ripple {
+  background-position: center;
+  transition: background 0.8s;
+}
+.ripple:hover {
+  background: var(--primary-blue-hover) radial-gradient(circle, transparent 1%, var(--primary-blue-hover) 1%) center/15000%;
+}
+.ripple:active {
+  background-color: var(--primary-blue-light);
+  background-size: 100%;
+  transition: background 0s;
+}
+.btn-primary.ripple:hover {
+  background: var(--primary-blue-hover) radial-gradient(circle, transparent 1%, var(--primary-blue-hover) 1%) center/15000%;
 }
 
 /* --------------------------------------------------------------------------
@@ -470,7 +532,7 @@ html, body {
 }
 
 .splash-hero-card {
-  background: linear-gradient(180deg, #FFFFFF 0%, #EBF3FF 100%);
+  background: linear-gradient(180deg, #FFFFFF 0%, #E0F2FE 100%);
   border-radius: var(--radius-lg);
   padding: 36px 24px;
   border: 1px solid var(--border-subtle);
@@ -483,23 +545,32 @@ html, body {
   gap: 16px;
 }
 
+body.dark-mode .splash-hero-card {
+  background: linear-gradient(180deg, var(--bg-card) 0%, #1E293B 100%);
+}
+
 .splash-emblem {
-  width: 90px;
-  height: 90px;
+  width: 100px; /* Bigger */
+  height: 100px;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--msrtc-red), var(--primary-blue));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
+  font-size: 54px;
   color: white;
   box-shadow: var(--shadow-glow);
-  animation: pulseGlow 2.5s infinite;
+  animation: pulseGlow 2.5s infinite, floatFloating 4s ease-in-out infinite;
 }
 
 @keyframes pulseGlow {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(11, 99, 229, 0.3); }
-  50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(11, 99, 229, 0.6); }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(var(--primary-blue-rgb), 0.3); }
+  50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(var(--primary-blue-rgb), 0.6); }
+}
+
+@keyframes floatFloating {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.05); }
 }
 
 .splash-title-wrap h1 {
@@ -533,7 +604,13 @@ html, body {
   font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
+  opacity: 0;
+  animation: fadeInSlide 0.4s ease-out forwards;
 }
+
+.splash-feat-pill:nth-child(1) { animation-delay: 0.1s; }
+.splash-feat-pill:nth-child(2) { animation-delay: 0.2s; }
+.splash-feat-pill:nth-child(3) { animation-delay: 0.3s; }
 
 /* --------------------------------------------------------------------------
    SCREEN 2: QR SCANNER
@@ -634,7 +711,7 @@ html, body {
    -------------------------------------------------------------------------- */
 
 .stop-home-header {
-  background: linear-gradient(135deg, var(--primary-blue), #084BB3);
+  background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-hover));
   color: white;
   border-radius: var(--radius-lg);
   padding: 20px;
@@ -680,11 +757,20 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  border-left: 6px solid var(--status-green);
+  border-left: none;
+  background: linear-gradient(to right, rgba(16, 185, 129, 0.15) 0%, transparent 8px), var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.arrival-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
 }
 
 .arrival-card.delayed {
-  border-left-color: var(--accent-orange);
+  background: linear-gradient(to right, rgba(255, 107, 0, 0.15) 0%, transparent 8px), var(--bg-card);
 }
 
 .arrival-main-info {
@@ -786,6 +872,10 @@ html, body {
   justify-content: space-around;
   text-align: center;
   border: 1px solid var(--border-subtle);
+}
+
+body.dark-mode .telemetry-overlay-strip {
+  background: rgba(var(--bg-card-rgb), 0.9);
 }
 
 .telemetry-item .value {
@@ -1026,13 +1116,20 @@ html, body {
 
 .schedule-table tr {
   background-color: var(--bg-card);
-  border-radius: var(--radius-sm);
+  border-radius: 12px; /* rounded corners */
+  transition: background-color var(--transition-fast);
+}
+
+.schedule-table tr:hover {
+  background-color: var(--bg-main); /* Subtle hover bg */
 }
 
 .schedule-table td {
   padding: 12px 14px;
   font-size: 14px;
 }
+.schedule-table td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+.schedule-table td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
 
 .schedule-table tr.live-row {
   box-shadow: 0 0 0 2px var(--status-green);
@@ -1089,8 +1186,8 @@ html, body {
 .switch {
   position: relative;
   display: inline-block;
-  width: 48px;
-  height: 26px;
+  width: 52px; /* Bigger */
+  height: 28px; /* Bigger */
 }
 
 .switch input {
@@ -1107,19 +1204,19 @@ html, body {
   right: 0;
   bottom: 0;
   background-color: #CBD5E1;
-  transition: .3s;
-  border-radius: 26px;
+  transition: .4s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother */
+  border-radius: 28px;
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 20px;
-  width: 20px;
+  height: 22px;
+  width: 22px;
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: .3s;
+  transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 50%;
 }
 
@@ -1128,7 +1225,7 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-  transform: translateX(22px);
+  transform: translateX(24px);
 }
 
 /* --------------------------------------------------------------------------
@@ -1221,7 +1318,8 @@ input:checked + .slider:before {
   width: 100vw;
   height: 100vh;
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px); /* Stronger blur */
+  -webkit-backdrop-filter: blur(8px);
   z-index: 200;
   display: none;
   align-items: flex-end;
@@ -1240,12 +1338,12 @@ input:checked + .slider:before {
   padding: 24px;
   max-height: 85vh;
   overflow-y: auto;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUpSpring 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); /* Spring animation */
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+@keyframes slideUpSpring {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
 }
 
 /* Toast Notifications */
@@ -1271,9 +1369,52 @@ input:checked + .slider:before {
   opacity: 1;
 }
 
-/* Utilities */
+/* --------------------------------------------------------------------------
+   New Animations
+   -------------------------------------------------------------------------- */
+
+@keyframes pulseLive {
+  0% { box-shadow: 0 0 0 0 rgba(var(--primary-blue-rgb), 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(var(--primary-blue-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--primary-blue-rgb), 0); }
+}
+
+/* --------------------------------------------------------------------------
+   Utilities
+   -------------------------------------------------------------------------- */
 .text-center { text-align: center; }
 .mt-2 { margin-top: 8px; }
 .mt-4 { margin-top: 16px; }
 .flex-between { display: flex; align-items: center; justify-content: space-between; }
 .gap-2 { gap: 8px; }
+
+/* New CSS utility classes */
+.section-title { font-size: 22px; font-weight: 800; }
+.section-subtitle { font-size: 13px; color: var(--text-secondary); }
+.card-title { font-size: 20px; font-weight: 800; }
+.card-subtitle { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
+.text-bold { font-weight: 700; }
+.text-sm { font-size: 12px; color: var(--text-secondary); }
+.text-xs { font-size: 11px; }
+.text-primary { color: var(--primary-blue); }
+.text-green { color: var(--status-green); }
+.w-full { width: 100%; }
+.label-text { font-weight: 700; font-size: 13px; }
+.label-text-block { font-weight: 700; font-size: 13px; margin-top: 12px; display: block; }
+.modal-title { font-size: 18px; font-weight: 800; }
+.arrivals-container { display: flex; flex-direction: column; gap: 12px; }
+.reports-container { display: flex; flex-direction: column; gap: 10px; }
+.lang-picker-row { width: 100%; max-width: 400px; justify-content: center; }
+.select-input { padding-left: 14px; }
+.detail-type { font-size: 14px; font-weight: 700; }
+.detail-driver { font-size: 13px; color: var(--text-secondary); }
+.admin-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.voice-cta-text { font-size: 13px; font-weight: 700; color: var(--primary-blue); }
+.toggle-label { font-weight: 700; }
+.toggle-desc { font-size: 12px; color: var(--text-secondary); }
+.schedule-header-row { text-align: left; font-size: 12px; color: var(--text-secondary); }
+.route-progress-label { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+.splash-msrtc-text { font-size: 14px; color: var(--text-secondary); margin-top: 6px; }
+.auto-refresh-label { font-size: 12px; color: var(--primary-blue); font-weight: 700; }
+.live-badge-gps { background: white; color: var(--primary-blue); animation: pulseLive 2s infinite; border-radius: 50%; padding: 4px; width: 12px; height: 12px; display: inline-block; }
+.admin-section-title { font-size: 22px; font-weight: 800; margin-top: 4px; }

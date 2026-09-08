@@ -1,5 +1,5 @@
 /**
- * SmartST - MSRTC Intelligent Bus Stop System
+ * Where's My Bus? - MSRTC Live Bus Tracking System
  * Core Web Application Logic & Telemetry Engine
  */
 
@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedBus: SMART_ST_DATA.buses[0],
     mapInstance: null,
     busMarker: null,
+    stopMarker: null,
     routePolyline: null,
     isCameraScanning: false,
     notifications: {
@@ -33,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --------------------------------------------------------------------------
 
   function navigateTo(screenId, params = {}) {
-    console.log(`[SmartST] Navigating to screen: ${screenId}`);
+    console.log(`[WMB] Navigating to screen: ${screenId}`);
     
     // Stop camera if leaving scanner
     if (state.currentScreen === 'scanner-view' && screenId !== 'scanner-view') {
@@ -55,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update bottom nav active state
     document.querySelectorAll('.nav-item').forEach(nav => {
-      if (nav.dataset.screen === screenId) {
+      if (nav.dataset.screenTarget === screenId) {
         nav.classList.add('active');
       } else {
         nav.classList.remove('active');
@@ -165,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (video) video.srcObject = stream;
         })
         .catch(err => {
-          console.warn("[SmartST] Real camera access fallback to simulated QR feed.", err);
+          console.warn("[WMB] Real camera access fallback to simulated QR feed.", err);
         });
     }
   }
@@ -317,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
-        attribution: '© OpenStreetMap | MSRTC SmartST'
+        attribution: '© OpenStreetMap | Where\'s My Bus?'
       }).addTo(state.mapInstance);
     } else {
       state.mapInstance.setView([bus.currentLat, bus.currentLng], 12);
@@ -325,7 +326,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Clear existing markers
     if (state.busMarker) state.mapInstance.removeLayer(state.busMarker);
+    if (state.stopMarker) state.mapInstance.removeLayer(state.stopMarker);
     if (state.routePolyline) state.mapInstance.removeLayer(state.routePolyline);
+
+    // Fix grey tiles when switching to this view
+    setTimeout(() => { state.mapInstance.invalidateSize(); }, 200);
 
     // Custom Bus Icon
     const busIcon = L.divIcon({
@@ -349,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .bindPopup(`<b>${bus.number} (${bus.type})</b><br>Speed: ${bus.speed} km/h<br>ETA: ${bus.etaMinutes} mins`);
 
     // Add Bus Stop Marker
-    L.marker([stop.latitude, stop.longitude], { icon: stopIcon })
+    state.stopMarker = L.marker([stop.latitude, stop.longitude], { icon: stopIcon })
       .addTo(state.mapInstance)
       .bindPopup(`<b>${stop.name}</b><br>Your location`);
 
@@ -503,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Next Direct Bus: <strong>MH 15 EG 4021</strong> in 6 minutes.<br>
             Total Distance: 184 km | Travel Time: ~3 hrs 40 mins
           </p>
-          <button class="btn btn-sm btn-primary mt-2" onclick="window.SmartST.navigateTo('tracking-view', {busId:'BUS-101'})">
+          <button class="btn btn-sm btn-primary mt-2" onclick="window.WMB.navigateTo('tracking-view', {busId:'BUS-101'})">
             Track Bus Now
           </button>
         </div>
@@ -756,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
 
   // Expose global methods for inline HTML handlers if needed
-  window.SmartST = {
+  window.WMB = {
     navigateTo,
     showToast,
     openModal,
