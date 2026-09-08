@@ -335,25 +335,31 @@ document.addEventListener('DOMContentLoaded', () => {
     return total;
   }
 
-  // Google Maps Style Tile Layers (Voyager, OSM, Satellite)
+  // Watermark-Free High Quality Tile Layers (Esri Street, OSM Standard, OSM HOT, Esri Satellite)
   const MAP_TILE_LAYERS = [
     {
-      name: 'Google-Style Clean Transit',
+      name: 'Clean Street Map (Google Style)',
       icon: '🗺️',
-      url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      options: { maxZoom: 19, subdomains: 'abcd', attribution: '© CARTO © OpenStreetMap' }
-    },
-    {
-      name: 'Satellite View (Esri Imagery)',
-      icon: '🛰️',
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      options: { maxZoom: 18, attribution: 'Tiles © Esri' }
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      options: { maxZoom: 19, attribution: '© Esri • Where\'s My Bus?' }
     },
     {
       name: 'OpenStreetMap Standard',
       icon: '🚏',
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       options: { maxZoom: 19, attribution: '© OpenStreetMap contributors' }
+    },
+    {
+      name: 'Humanitarian Transit',
+      icon: '🚌',
+      url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+      options: { maxZoom: 19, subdomains: ['a', 'b'], attribution: '© OpenStreetMap contributors' }
+    },
+    {
+      name: 'Satellite Aerial View',
+      icon: '🛰️',
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      options: { maxZoom: 18, attribution: 'Tiles © Esri' }
     }
   ];
 
