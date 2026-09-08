@@ -923,10 +923,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="badge badge-green">Direct MSRTC Bus</span>
             <span class="badge badge-blue">Est. Fare: ₹285</span>
           </div>
-          <h3 style="font-size:18px; font-weight:800;">Shivare Stop ➔ ${query.toUpperCase()}</h3>
+          <h3 style="font-size:18px; font-weight:800;">${state.activeStop.name} ➔ ${query.toUpperCase()}</h3>
           <p style="font-size:13px; color:var(--text-secondary); margin-top:4px;">
-            Next Direct Bus: <strong>MH 15 EG 4021</strong> in 6 minutes.<br>
-            Total Distance: 184 km | Travel Time: ~3 hrs 40 mins
+            Next Direct Bus: <strong>MH 15 EG 4021</strong> in 5 minutes.<br>
+            Total Distance: ~106 km | Travel Time: ~1 hr 55 mins
           </p>
           <button class="btn btn-sm btn-primary mt-2" onclick="window.WMB.navigateTo('tracking-view', {busId:'BUS-101'})">
             Track Bus Now
@@ -936,12 +936,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="card mt-2">
           <div class="card-header-row">
             <span class="badge badge-orange">Connecting Option</span>
-            <span class="badge badge-blue">Est. Fare: ₹240</span>
+            <span class="badge badge-blue">Est. Fare: ₹120</span>
           </div>
-          <h3 style="font-size:18px; font-weight:800;">Via Sinnar Bus Stand Transfer</h3>
+          <h3 style="font-size:18px; font-weight:800;">Via Vinchur / Niphad Transfer</h3>
           <p style="font-size:13px; color:var(--text-secondary); margin-top:4px;">
-            Leg 1: Shivare to Sinnar (Local Bus in 14 mins)<br>
-            Leg 2: Sinnar to Destination (Express Bus every 20 mins)
+            Leg 1: ${state.activeStop.name} to Vinchur (Local Bus in 12 mins)<br>
+            Leg 2: Vinchur to Destination (Express Bus every 15 mins)
           </p>
         </div>
       `;
