@@ -1062,20 +1062,86 @@ body.dark-mode .telemetry-overlay-strip {
   100% { transform: scale(2.2); opacity: 0; }
 }
 
-.live-bus-pill {
+.live-bus-circle {
   position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 10px;
-  border-radius: var(--radius-full);
-  color: white;
-  font-weight: 800;
-  font-size: 11px;
+  justify-content: center;
+  font-size: 20px;
+  border: 3px solid #FFFFFF;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  border: 2px solid white;
-  white-space: nowrap;
-  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.live-bus-circle:hover {
+  transform: scale(1.12);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+/* Leaflet Custom Popup Styling for Bus Info */
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid var(--border-subtle) !important;
+  font-family: 'Poppins', 'Inter', sans-serif !important;
+  padding: 4px !important;
+}
+
+.bus-map-popup-card {
+  min-width: 210px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px;
+}
+
+.popup-bus-header {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 6px;
+}
+
+.popup-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: var(--bg-main);
+  border-radius: var(--radius-sm);
+  padding: 6px 4px;
+  text-align: center;
+}
+
+.popup-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.popup-metric .m-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--primary-blue);
+  line-height: 1.1;
+}
+
+.popup-metric .m-lbl {
+  font-size: 9px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.popup-bus-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .live-stop-pin-wrap {

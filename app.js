@@ -401,6 +401,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Generate rich, clean on-click popup content for the circular bus icon
+  function createBusPopupHtml(bus) {
+    return `
+      <div class="bus-map-popup-card">
+        <div class="popup-bus-header">
+          <div class="flex-between gap-2" style="margin-bottom: 4px;">
+            <span class="badge" style="background:${bus.badgeColor}; color:#FFFFFF; font-size:11px; padding: 4px 8px;">🚌 ${bus.number}</span>
+            <span class="badge badge-green" style="font-size:10px;">● ${bus.status}</span>
+          </div>
+          <div style="font-weight: 800; font-size: 13px; color: var(--text-main); margin-top: 2px;">${bus.type}</div>
+          <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.2;">${bus.routeName}</div>
+        </div>
+        <div class="popup-metrics-grid">
+          <div class="popup-metric">
+            <span class="m-val" id="popup-bus-speed">${bus.speed} km/h</span>
+            <span class="m-lbl">Speed</span>
+          </div>
+          <div class="popup-metric">
+            <span class="m-val" id="popup-bus-dist">${bus.distanceFromStop} km</span>
+            <span class="m-lbl">Distance</span>
+          </div>
+          <div class="popup-metric">
+            <span class="m-val" id="popup-bus-eta">${bus.etaMinutes} mins</span>
+            <span class="m-lbl">Live ETA</span>
+          </div>
+        </div>
+        <div class="popup-bus-footer">
+          <div>Seats: <strong>${bus.occupancy}</strong></div>
+          <div>Driver: <strong>${bus.driverName.split(' ')[0]}</strong></div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderTrackingScreen() {
     const bus = state.selectedBus;
     const stop = state.activeStop;
@@ -550,26 +584,26 @@ document.addEventListener('DOMContentLoaded', () => {
       .addTo(state.mapInstance)
       .bindPopup(`<b>${stop.name}</b><br>Your Stop (${stop.village})<br>Active Live QR Station`);
 
-    // 5. Live Bus Pin (Vibrant Vehicle Marker with Live Radar Wave)
+    // 5. Live Bus Pin (Simple Circular Bus Icon with Live Radar Ping - Click to view bus info)
     const busPt = roadPath[state.busRouteIndex] || [bus.currentLat, bus.currentLng];
     const busIcon = L.divIcon({
       className: 'custom-bus-leaflet-icon',
       html: `
-        <div class="live-bus-pin-wrap">
-          <div class="live-bus-pulse-ring"></div>
-          <div class="live-bus-pill" style="background: ${bus.badgeColor};">
+        <div class="live-bus-pin-wrap" title="Bus ${bus.number} - Click for details">
+          <div class="live-bus-pulse-ring" style="background: ${bus.badgeColor}40;"></div>
+          <div class="live-bus-circle" style="background: ${bus.badgeColor};">
             <span>🚌</span>
-            <span>${bus.number}</span>
           </div>
         </div>
       `,
-      iconSize: [120, 36],
-      iconAnchor: [60, 18]
+      iconSize: [42, 42],
+      iconAnchor: [21, 21],
+      popupAnchor: [0, -22]
     });
 
     state.busMarker = L.marker(busPt, { icon: busIcon, zIndexOffset: 1000 })
       .addTo(state.mapInstance)
-      .bindPopup(`<b>${bus.number} (${bus.type})</b><br>Speed: <span id="popup-bus-speed">${bus.speed} km/h</span><br>ETA: <span id="popup-bus-eta">${bus.etaMinutes} mins</span>`);
+      .bindPopup(createBusPopupHtml(bus));
 
     // Fit View to show both bus and stop with comfortable padding
     const bounds = L.latLngBounds([busPt, [stop.latitude, stop.longitude]]);
@@ -655,8 +689,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Also update popup if open
       const pSpeed = document.getElementById('popup-bus-speed');
+      const pDist = document.getElementById('popup-bus-dist');
       const pEta = document.getElementById('popup-bus-eta');
       if (pSpeed) pSpeed.textContent = `${speed} km/h`;
+      if (pDist) pDist.textContent = `${remainingKm.toFixed(1)} km`;
       if (pEta) pEta.textContent = `${etaMins} mins`;
 
     }, 1800);
