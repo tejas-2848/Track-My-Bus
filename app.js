@@ -455,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshTimeEl = document.getElementById('trip-refresh-time');
 
     if (prevStopEl) prevStopEl.textContent = bus.previousStop || 'Terminal Stand';
-    if (currLocEl) currLocEl.textContent = `NH 753J (Near ${bus.nextStop.replace(' Bus Stop', '').replace(' Stand', '')} Corridor)`;
+    if (currLocEl) currLocEl.textContent = `Highway Corridor (Near ${bus.nextStop.replace(' Bus Stop', '').replace(' Stand', '')})`;
     if (nextStopEl) nextStopEl.textContent = bus.nextStop;
     if (refreshTimeEl) refreshTimeEl.textContent = formatTripTimestamp();
 
@@ -599,7 +599,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     state.busRouteIndex = closestBusIdx;
-    state.busTargetStopIndex = closestStopIdx;
+
+    // Check if commuter's active stop is on this bus route (<= 8km)
+    const isStopOnRoute = minStopD <= 8;
+    let targetStopName = stop.name;
+    let targetStopPt = [stop.latitude, stop.longitude];
+    let targetStopIdx = closestStopIdx;
+
+    if (!isStopOnRoute) {
+      // For buses on other corridors, target the bus's designated next stop
+      const busTarget = (bus.intermediateStops && (bus.intermediateStops.find(s => s.isCurrentTarget) || bus.intermediateStops[bus.intermediateStops.length - 1])) || null;
+      if (busTarget && busTarget.lat && busTarget.lng) {
+        targetStopName = busTarget.name;
+        targetStopPt = [busTarget.lat, busTarget.lng];
+        let minTgtD = Infinity, bestTgtIdx = 0;
+        for (let i = 0; i < roadPath.length; i++) {
+          const d = calculateDistanceKm(roadPath[i][0], roadPath[i][1], busTarget.lat, busTarget.lng);
+          if (d < minTgtD) { minTgtD = d; bestTgtIdx = i; }
+        }
+        targetStopIdx = bestTgtIdx;
+      }
+    }
+
+    state.busTargetStopIndex = targetStopIdx;
+    state.currentTargetStopName = targetStopName;
+    state.targetStopPt = targetStopPt;
+    state.isStopOnRoute = isStopOnRoute;
 
     // Clear previous map layers
     if (state.busMarker) state.mapInstance.removeLayer(state.busMarker);
@@ -676,9 +701,11 @@ document.addEventListener('DOMContentLoaded', () => {
       iconAnchor: [22, 22]
     });
 
-    state.stopMarker = L.marker([stop.latitude, stop.longitude], { icon: stopIcon, zIndexOffset: 500 })
+    state.stopMarker = L.marker(targetStopPt, { icon: stopIcon, zIndexOffset: 500 })
       .addTo(state.mapInstance)
-      .bindPopup(`<b>${stop.name}</b><br>Your Stop (${stop.village})<br>Active Live QR Station`);
+      .bindPopup(isStopOnRoute
+        ? `<b>${stop.name}</b><br>Your Stop (${stop.village})<br>Active Live QR Station`
+        : `<b>${targetStopName}</b><br>Approaching Stop<br>${bus.routeName}`);
 
     // 5. Live Bus Pin (Simple Circular Bus Icon with Live Radar Ping - Click to view bus info)
     const busPt = roadPath[state.busRouteIndex] || [bus.currentLat, bus.currentLng];
@@ -701,8 +728,8 @@ document.addEventListener('DOMContentLoaded', () => {
       .addTo(state.mapInstance)
       .bindPopup(createBusPopupHtml(bus));
 
-    // Fit View to show both bus and stop with comfortable padding
-    const bounds = L.latLngBounds([busPt, [stop.latitude, stop.longitude]]);
+    // Fit View to show both bus and approaching stop with comfortable padding
+    const bounds = L.latLngBounds([busPt, targetStopPt]);
     state.mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
 
     // Start Live Simulation Loop
@@ -761,20 +788,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if (etaEl) etaEl.textContent = `${etaMins} mins`;
 
       // Check if bus arrived at stop
+      const targetName = state.currentTargetStopName || stop.name;
       const isAtStop = Math.abs(state.busRouteIndex - state.busTargetStopIndex) <= 1 || remainingKm < 0.2;
       if (isAtStop) {
         if (statusBadge) {
           statusBadge.className = 'badge badge-green';
           statusBadge.textContent = '● Arrived at Stop 🚏';
         }
-        if (bannerTitle) bannerTitle.textContent = `Bus Arrived at ${stop.name}! 🚏`;
+        if (bannerTitle) bannerTitle.textContent = `Bus Arrived at ${targetName}! 🚏`;
         if (bannerSub) bannerSub.textContent = `Boarding Now • Doors Open`;
       } else {
         if (statusBadge) {
           statusBadge.className = 'badge badge-green';
           statusBadge.textContent = '● Moving (Live GPS)';
         }
-        if (bannerTitle) bannerTitle.textContent = `En Route to ${stop.name}`;
+        if (bannerTitle) bannerTitle.textContent = `En Route to ${targetName}`;
         if (bannerSub) bannerSub.textContent = `${remainingKm.toFixed(1)} km away • ~${etaMins} mins at ${speed} km/h`;
       }
 
