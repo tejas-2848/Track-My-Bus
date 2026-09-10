@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAccountScreen();
     } else if (screenId === 'tracking-view') {
       if (!params.busId && (!state.hasUserSelectedStop || !state.activeStop)) {
-        showToast('📷 Please scan a bus stop QR or select a nearby stop to view the live map');
+        showToast('Please scan a bus stop QR or select a nearby stop to view the live map');
         navigateTo('scanner-view');
         return;
       }
@@ -185,9 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const key = el.dataset.i18n;
       if (key === 'appName') {
         const brandMap = {
-          en: 'Where\'s My <span class="brand-accent">Bus?</span>',
-          mr: 'माझी बस <span class="brand-accent">कुठे आहे?</span>',
-          hi: 'मेरी बस <span class="brand-accent">कहाँ है?</span>'
+          en: 'Track My <span class="brand-accent">Bus</span>',
+          mr: 'माझी बस <span class="brand-accent">ट्रॅक करा</span>',
+          hi: 'मेरी बस <span class="brand-accent">ट्रैक करें</span>'
         };
         el.innerHTML = brandMap[langCode] || dict[key];
         return;
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
     utterance.pitch = state.audioPitch;
 
     utterance.onstart = () => {
-      showToast('🔊 Playing Voice Announcement...');
+      showToast('Playing Voice Announcement...');
     };
 
     state.speechSynth.speak(utterance);
@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       if (scanFrame) scanFrame.classList.remove('scan-success');
       state.isQrProcessing = false;
-      showToast(`🎉 QR Code Scanned: ${getStopDisplayName(matchedStop)}`);
+      showToast(`QR Code Scanned: ${getStopDisplayName(matchedStop)}`);
       openLiveMapForStop(matchedStop);
     }, 400);
   }
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       updateTorchUI();
-      showToast(state.isTorchOn ? '🔦 Torch turned ON' : '🔦 Torch turned OFF');
+      showToast(state.isTorchOn ? 'Torch turned ON' : 'Torch turned OFF');
     } catch (err) {
       console.warn('[WMB] Torch toggle failed:', err);
       state.isTorchOn = false;
@@ -637,13 +637,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (upcomingResult && upcomingResult.bus) {
       state.selectedBus = upcomingResult.bus;
       if (!upcomingResult.isPassed) {
-        showToast(`🚏 ${getStopDisplayName(targetStop)}: Next bus arriving in ${upcomingResult.etaMinutes}m`);
+        showToast(`${getStopDisplayName(targetStop)}: Next bus arriving in ${upcomingResult.etaMinutes}m`);
       } else {
-        showToast(`🚏 Connected to ${getStopDisplayName(targetStop)}`);
+        showToast(`Connected to ${getStopDisplayName(targetStop)}`);
       }
     } else {
       state.selectedBus = SMART_ST_DATA.buses[0];
-      showToast(`🚏 Connected to ${getStopDisplayName(targetStop)}`);
+      showToast(`Connected to ${getStopDisplayName(targetStop)}`);
     }
 
     navigateTo('tracking-view', { busId: state.selectedBus.id });
@@ -810,7 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let upBusBadge = '';
       if (upBus && item.isUpcoming) {
-        upBusBadge = `<div class="text-xs text-green font-bold mt-1">⚡ Next: ${upBus.number} (${item.etaMinutes}m)</div>`;
+        upBusBadge = `<div class="text-xs text-green font-bold mt-1" style="display:inline-flex; align-items:center; gap:4px;"><span class="pulse-dot"></span> Next: ${upBus.number} (${item.etaMinutes}m)</div>`;
       }
 
       const card = document.createElement('div');
@@ -818,12 +818,14 @@ document.addEventListener('DOMContentLoaded', () => {
       card.setAttribute('data-stop-id', st.id || st.name);
 
       card.innerHTML = `
-        <div class="nearby-stop-icon">🚏</div>
+        <div class="nearby-stop-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        </div>
         <div class="nearby-stop-info" style="flex: 1;">
           <div class="nearby-stop-name">${getStopDisplayName(st)}</div>
           <div class="nearby-stop-meta">
-            <span class="nearby-dist-pill">📍 ${distStr} away</span>
-            <span class="nearby-walk-pill">🚶 ~${walkMins} min walk</span>
+            <span class="nearby-dist-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> ${distStr} away</span>
+            <span class="nearby-walk-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~${walkMins} min walk</span>
           </div>
           ${upBusBadge}
         </div>
@@ -921,7 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const busBox = document.getElementById('home-nearby-bus-box');
 
     if (nameEl) nameEl.textContent = getStopDisplayName(st);
-    if (distEl) distEl.textContent = state.isGpsActive ? `📍 ${distStr} • Live GPS` : `📍 ${distStr}`;
+    if (distEl) distEl.textContent = state.isGpsActive ? `${distStr} • Live GPS` : distStr;
 
     if (upcomingBus) {
       if (busTypeEl) busTypeEl.textContent = upcomingBus.type.split('(')[0].trim();
@@ -991,18 +993,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let nextBusHtml = '';
       if (upBus && item.isUpcoming) {
-        nextBusHtml = `<div class="text-xs text-green font-bold mt-1">⚡ Next: ${upBus.number} to ${getBusDestination(upBus)} in ${item.etaMinutes}m</div>`;
+        nextBusHtml = `<div class="text-xs text-green font-bold mt-1" style="display:inline-flex; align-items:center; gap:4px;"><span class="pulse-dot"></span> Next: ${upBus.number} to ${getBusDestination(upBus)} in ${item.etaMinutes}m</div>`;
       } else if (upBus) {
         nextBusHtml = `<div class="text-xs text-secondary mt-1">Bus ${upBus.number} (Scheduled)</div>`;
       }
 
       card.innerHTML = `
-        <div class="nearby-stop-icon">🚏</div>
+        <div class="nearby-stop-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        </div>
         <div class="nearby-stop-info" style="flex: 1;">
           <div class="nearby-stop-name">${getStopDisplayName(st)}</div>
           <div class="nearby-stop-meta">
-            <span class="nearby-dist-pill">📍 ${distStr}</span>
-            <span class="nearby-walk-pill">🚶 ~${walkMins} min walk</span>
+            <span class="nearby-dist-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> ${distStr}</span>
+            <span class="nearby-walk-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~${walkMins} min walk</span>
           </div>
           ${nextBusHtml}
         </div>
@@ -1078,7 +1082,7 @@ document.addEventListener('DOMContentLoaded', () => {
           pos => {
             refreshBtn.disabled = false;
             refreshBtn.style.opacity = '1';
-            showToast('📍 Updated nearby stops with live GPS location!');
+            showToast('Updated nearby stops with live GPS location!');
             renderNearbyStopsScreen();
             renderHomeNearbyStopCard();
           },
@@ -1235,7 +1239,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
             </div>
             <div class="nearby-preview-right">
-              <span class="nearby-preview-eta">🟢 ${item.etaMinutes} min</span>
+              <span class="nearby-preview-eta"><span class="pulse-dot"></span>${item.etaMinutes} min</span>
               <span class="nearby-preview-status">On Time</span>
             </div>
           </div>
@@ -1259,7 +1263,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         upcomingHtml = `
           <div class="nearby-card-bus-preview empty">
-            <div class="nearby-preview-empty-text">⚪ No active buses currently scheduled</div>
+            <div class="nearby-preview-empty-text">No active buses currently scheduled</div>
           </div>
         `;
       }
@@ -1267,7 +1271,9 @@ document.addEventListener('DOMContentLoaded', () => {
       card.innerHTML = `
         <div class="nearby-card-header">
           <div class="nearby-card-title-group">
-            <div class="nearby-card-icon-stop">🚏</div>
+            <div class="nearby-card-icon-stop">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            </div>
             <div>
               <div class="flex-align gap-2">
                 <h3 class="nearby-card-title">${getStopDisplayName(st)}</h3>
@@ -1277,19 +1283,22 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
           <div class="nearby-card-distance-box">
-            <span class="nearby-card-dist-pill">📍 ${distStr}</span>
-            <span class="nearby-card-walk-pill">🚶 ~${walkMins} min</span>
+            <span class="nearby-card-dist-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> ${distStr}</span>
+            <span class="nearby-card-walk-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~${walkMins} min</span>
           </div>
         </div>
 
         ${upcomingHtml}
 
         <div class="nearby-card-footer">
-          <button class="btn btn-primary btn-sm btn-nearby-live-map" type="button">
-            🗺️ Live Map ➔
+          <button class="btn btn-primary btn-sm btn-nearby-live-map" type="button" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            <span>Live Map</span>
+            <span>&rarr;</span>
           </button>
-          <button class="btn btn-secondary btn-sm btn-nearby-timetable" type="button">
-            📅 Routes & Times
+          <button class="btn btn-secondary btn-sm btn-nearby-timetable" type="button" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Routes & Times</span>
           </button>
         </div>
       `;
@@ -1848,7 +1857,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <!-- Via Corridor -->
         <div class="route-via-row">
-          <span class="route-via-label">🛣️ Via:</span>
+          <span class="route-via-label">Via:</span>
           <span>${viaText}</span>
         </div>
 
@@ -1882,7 +1891,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ${nearestBus ? `
           <div class="route-next-bus-pill">
             <div class="route-next-bus-left">
-              <span>⚡</span>
+              <span class="pulse-dot"></span>
               <span>Next: <strong>${nearestBus.number}</strong> (${nearestBus.type.split('(')[0].trim()})</span>
             </div>
             <div class="route-next-bus-eta">
@@ -1894,20 +1903,23 @@ document.addEventListener('DOMContentLoaded', () => {
         <!-- Interactive Actions -->
         <div class="route-actions-row">
           <button type="button" class="route-btn route-btn-primary btn-track-full-route" data-route-id="${route.id}">
-            🗺️ <span>${dict.trackLiveMap || 'Track on Map'}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            <span>${dict.trackLiveMap || 'Track on Map'}</span>
           </button>
           <button type="button" class="route-btn route-btn-secondary btn-toggle-stops ${isStopsExpanded ? 'expanded' : ''}" data-route-id="${route.id}">
-            🚏 <span>${isStopsExpanded ? (dict.hideStops || 'Hide Stops') : (dict.viewStops || 'View Stops')} (${stops.length})</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <span>${isStopsExpanded ? (dict.hideStops || 'Hide Stops') : (dict.viewStops || 'View Stops')} (${stops.length})</span>
           </button>
           <button type="button" class="route-btn route-btn-secondary btn-toggle-buses ${isBusesExpanded ? 'expanded' : ''}" data-route-id="${route.id}">
-            🚌 <span>${isBusesExpanded ? (dict.hideLiveBuses || 'Hide Buses') : (dict.viewLiveBuses || 'Live Buses')} (${runningBuses.length})</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/><path d="M4 11h16"/><path d="M4 7h16"/></svg>
+            <span>${isBusesExpanded ? (dict.hideLiveBuses || 'Hide Buses') : (dict.viewLiveBuses || 'Live Buses')} (${runningBuses.length})</span>
           </button>
         </div>
 
         <!-- Collapsible Stops Drawer -->
         <div class="route-collapsible-drawer route-stops-drawer ${isStopsExpanded ? 'open' : ''}" id="stops-drawer-${route.id}">
           <div class="route-drawer-header">
-            <span>🚏 All ${stops.length} Intermediate Waypoints</span>
+            <span>All ${stops.length} Intermediate Waypoints</span>
             <span class="text-xs text-secondary">Ordered Sequence</span>
           </div>
           <div class="route-stops-list">
@@ -1918,7 +1930,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <!-- Collapsible Buses Drawer -->
         <div class="route-collapsible-drawer route-buses-drawer ${isBusesExpanded ? 'open' : ''}" id="buses-drawer-${route.id}">
           <div class="route-drawer-header">
-            <span>🚌 ${runningBuses.length} Active Buses on this Route</span>
+            <span>${runningBuses.length} Active Buses on this Route</span>
             <span class="badge badge-green">● Live Telemetry</span>
           </div>
           <div class="route-buses-grid">
@@ -2162,7 +2174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.lastViewedStopId = resolved.id;
         try { localStorage.setItem('wmb_last_viewed_stop', resolved.id); } catch(e) {}
         renderStopScreen();
-        showToast(`🚏 Connected to ${getStopDisplayName(resolved)}`);
+        showToast(`Connected to ${getStopDisplayName(resolved)}`);
         searchInput.value = getStopDisplayName(resolved);
         if (clearBtn) clearBtn.style.display = 'flex';
       } else {
@@ -2243,7 +2255,7 @@ document.addEventListener('DOMContentLoaded', () => {
       name: 'OpenStreetMap Standard',
       icon: '🚏',
       url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      options: { maxZoom: 19, attribution: '© OpenStreetMap contributors • Where\'s My Bus?' }
+      options: { maxZoom: 19, attribution: '© OpenStreetMap contributors • Track My Bus' }
     },
     {
       name: 'Clean Street Map (Esri)',
@@ -2377,7 +2389,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       chip.innerHTML = `
-        <span class="chip-num">🚌 ${shortPlate}</span>
+        <span class="chip-num">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px; margin-right:3px;"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 18v2M17 18v2M3 10h18"/><circle cx="7.5" cy="14.5" r="1"/><circle cx="16.5" cy="14.5" r="1"/></svg>${shortPlate}
+        </span>
         <span class="chip-time">${schedTime}</span>
         <span class="chip-status-tag">${badgeLabel}</span>
       `;
@@ -2539,17 +2553,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const badge = document.createElement('div');
         badge.className = 'trip-bus-inline-badge';
         badge.id = 'trip-live-bus-badge';
-        badge.textContent = '🚌';
+        badge.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 18v2M17 18v2M3 10h18"/><circle cx="7.5" cy="14.5" r="1"/><circle cx="16.5" cy="14.5" r="1"/></svg>`;
         badge.style.top = '9px';
         nodeCol.appendChild(badge);
       }
     }
 
-    // Auto-scroll timeline to the current approaching stop
+    // Auto-scroll timeline internally to the current approaching stop (without scrolling window)
     setTimeout(() => {
       const currentStopEl = container.querySelector('.trip-stop-row.current');
-      if (currentStopEl) {
-        currentStopEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (currentStopEl && container.scrollHeight > container.clientHeight) {
+        const topPos = currentStopEl.offsetTop - (container.clientHeight / 2);
+        container.scrollTo({ top: Math.max(0, topPos), behavior: 'smooth' });
       }
     }, 150);
 
@@ -2560,9 +2575,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const stopName = e.currentTarget.dataset.stop;
         const isActive = e.currentTarget.classList.toggle('active');
         if (isActive) {
-          showToast(`🔔 Reminder alert set for ${stopName}!`);
+          showToast(`Reminder alert set for ${stopName}!`);
         } else {
-          showToast(`🔕 Reminder removed for ${stopName}`);
+          showToast(`Reminder removed for ${stopName}`);
         }
       });
     });
@@ -2683,7 +2698,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(state.mapInstance);
 
     state.routePolylineCore = L.polyline(roadPath, {
-      color: '#0ea5e9',
+      color: '#3B82F6',
       weight: 5,
       opacity: 0.95,
       lineCap: 'round',
@@ -2699,7 +2714,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const endPt = roadPath[roadPath.length - 1];
     const flagIcon = L.divIcon({
       className: 'custom-flag-leaflet-icon',
-      html: `<div class="terminal-flag-pin">🏁</div>`,
+      html: `<div class="terminal-flag-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>`,
       iconSize: [32, 32],
       iconAnchor: [16, 16]
     });
@@ -2713,7 +2728,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (st.lat && st.lng) {
           const isDeparted = st.status === 'Departed';
           const isTarget = st.isCurrentTarget;
-          const wpColor = isDeparted ? '#94A3B8' : (isTarget ? '#10B981' : '#0EA5E9');
+          const wpColor = isDeparted ? '#94A3B8' : (isTarget ? '#10B981' : '#3B82F6');
           const wpBorder = isDeparted ? '#64748B' : '#FFFFFF';
           const wpSize = isTarget ? 18 : 14;
           const wpAnchor = isTarget ? 9 : 7;
@@ -2739,7 +2754,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="live-bus-pin-wrap" title="Bus ${bus.number} - Click for details">
           <div class="live-bus-pulse-ring" style="background: ${bus.badgeColor}40;"></div>
           <div class="live-bus-circle" style="background: ${bus.badgeColor};">
-            <span>🚌</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 17h2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10h2"/>
+              <circle cx="7" cy="17" r="2"/>
+              <path d="M9 17h6"/>
+              <circle cx="17" cy="17" r="2"/>
+              <path d="M4 11h16"/>
+              <path d="M4 7h16"/>
+            </svg>
           </div>
         </div>
       `,
@@ -2857,7 +2879,7 @@ document.addEventListener('DOMContentLoaded', () => {
           badge = document.createElement('div');
           badge.className = 'trip-bus-inline-badge';
           badge.id = 'trip-live-bus-badge';
-          badge.textContent = '🚌';
+          badge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/><path d="M4 11h16"/><path d="M4 7h16"/></svg>`;
           nodeCol.appendChild(badge);
         }
 
@@ -2874,12 +2896,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 3. Smooth auto-scroll only when target stop changes
+    // 3. Smooth auto-scroll internally only when target stop changes
     if (state.lastTimelineTargetIdx !== currentTargetIdx) {
       state.lastTimelineTargetIdx = currentTargetIdx;
       const currentStopEl = container.querySelector('.trip-stop-row.current');
-      if (currentStopEl) {
-        currentStopEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (currentStopEl && container.scrollHeight > container.clientHeight) {
+        const topPos = currentStopEl.offsetTop - (container.clientHeight / 2);
+        container.scrollTo({ top: Math.max(0, topPos), behavior: 'smooth' });
       }
     }
   }
@@ -2978,9 +3001,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (etaEl) etaEl.textContent = '0 mins';
         if (statusBadge) {
           statusBadge.className = 'badge badge-green';
-          statusBadge.textContent = state.currentLanguage === 'mr' ? '● स्थानकावर पोहोचली 🚏' : (state.currentLanguage === 'hi' ? '● स्टॉप पर पहुँची 🚏' : '● Arrived at Stop 🚏');
+          statusBadge.textContent = state.currentLanguage === 'mr' ? '● स्थानकावर पोहोचली' : (state.currentLanguage === 'hi' ? '● स्टॉप पर पहुँची' : '● Arrived at Stop');
         }
-        if (bannerTitle) bannerTitle.textContent = state.currentLanguage === 'mr' ? `${stopDisplayName} येथे! 🚏` : (state.currentLanguage === 'hi' ? `${stopDisplayName} पर! 🚏` : `At ${stopDisplayName}! 🚏`);
+        if (bannerTitle) bannerTitle.textContent = state.currentLanguage === 'mr' ? `${stopDisplayName} येथे पोहोचली` : (state.currentLanguage === 'hi' ? `${stopDisplayName} पर पहुँची` : `Arrived at ${stopDisplayName}`);
         if (bannerSub) bannerSub.textContent = state.currentLanguage === 'mr' ? 'प्रवासी चढत आहेत • दरवाजे उघडे' : (state.currentLanguage === 'hi' ? 'यात्री चढ़ रहे हैं • दरवाजे खुले' : 'Boarding Passengers • Doors Open');
 
         // During dwell, the bus badge stays firmly on the dwell stop
@@ -3201,10 +3224,10 @@ document.addEventListener('DOMContentLoaded', () => {
           if (state.busMarker && state.mapInstance) {
             state.mapInstance.setView(state.busMarker.getLatLng(), 14, { animate: true });
           }
-          showToast('🧭 Auto-Follow Bus: ON');
+          showToast('Auto-Follow Bus: ON');
         } else {
           followBtn.classList.remove('active');
-          showToast('🧭 Auto-Follow Bus: OFF');
+          showToast('Auto-Follow Bus: OFF');
         }
       });
     }
@@ -3234,21 +3257,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.userLocationMarker = L.marker([uLat, uLng], { icon: userIcon }).addTo(state.mapInstance)
                   .bindPopup('<b>Your Current Location</b>').openPopup();
                 state.mapInstance.setView([uLat, uLng], 14, { animate: true });
-                showToast('📍 Located your live GPS position!');
+                showToast('Located your live GPS position!');
               }
             },
             () => {
               // Fallback to stop location
               if (state.mapInstance && state.stopMarker) {
                 state.mapInstance.setView(state.stopMarker.getLatLng(), 15, { animate: true });
-                showToast(`🚏 Centered on ${state.activeStop.name}`);
+                showToast(`Centered on ${state.activeStop.name}`);
               }
             },
             { enableHighAccuracy: true, timeout: 5000 }
           );
         } else if (state.mapInstance && state.stopMarker) {
           state.mapInstance.setView(state.stopMarker.getLatLng(), 15, { animate: true });
-          showToast(`🚏 Centered on ${state.activeStop.name}`);
+          showToast(`Centered on ${state.activeStop.name}`);
         }
       });
     }
@@ -3262,7 +3285,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const fb = document.getElementById('btn-toggle-follow-bus');
           if (fb) fb.classList.remove('active');
           state.mapInstance.fitBounds(state.routePolylineCore.getBounds(), { padding: [40, 40], animate: true });
-          showToast('📐 Showing Full Route');
+          showToast('Showing Full Route');
         }
       });
     }
@@ -3810,7 +3833,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try { localStorage.setItem('wmb_feedbacks', JSON.stringify(state.feedbackList)); } catch(e) {}
         lastFeedbackTime = now;
 
-        showToast('🙏 Thank you! Your feedback has been recorded.');
+        showToast('Thank you! Your feedback has been recorded.');
         if (msgInput) msgInput.value = '';
         if (contactInput) contactInput.value = '';
         closeModal('feedback-modal');
@@ -3898,7 +3921,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.currentUser = user;
         try { localStorage.setItem('wmb_currentUser', JSON.stringify(user)); } catch(e) {}
 
-        showToast(`🎉 Welcome, ${user.name}!`);
+        showToast(`Welcome, ${user.name}!`);
         closeModal('auth-modal');
         if (contactInput) contactInput.value = '';
         if (passwordInput) passwordInput.value = '';
@@ -4262,7 +4285,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnShowTicketQr = document.getElementById('btn-show-ticket-qr');
     if (btnShowTicketQr) {
       btnShowTicketQr.addEventListener('click', () => {
-        showToast('📱 Conductor QR code active and verified.');
+        showToast('Conductor QR code active and verified.');
       });
     }
 
@@ -4277,14 +4300,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRenewPass = document.getElementById('btn-renew-pass');
     if (btnRenewPass) {
       btnRenewPass.addEventListener('click', () => {
-        showToast('🔄 Renewal request submitted to MSRTC Nashik Division.');
+        showToast('Renewal request submitted to MSRTC Nashik Division.');
       });
     }
 
     const btnDownloadPass = document.getElementById('btn-download-pass');
     if (btnDownloadPass) {
       btnDownloadPass.addEventListener('click', () => {
-        showToast('📥 Smart Pass downloaded to device storage.');
+        showToast('Smart Pass downloaded to device storage.');
       });
     }
 
@@ -4317,7 +4340,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const checked = e.target.checked;
         document.body.classList.toggle('dark-mode', checked);
         try { localStorage.setItem('wmb_dark_mode', checked); } catch(err) {}
-        showToast(checked ? '🌙 Dark Mode activated' : '☀️ Light Mode activated');
+        showToast(checked ? 'Dark Mode activated' : 'Light Mode activated');
       });
     }
 
@@ -4328,7 +4351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const checked = e.target.checked;
         document.body.classList.toggle('high-contrast', checked);
         try { localStorage.setItem('wmb_high_contrast', checked); } catch(err) {}
-        showToast(checked ? '👁️ High Contrast Mode activated' : 'Standard Contrast restored');
+        showToast(checked ? 'High Contrast Mode activated' : 'Standard Contrast restored');
       });
     }
 
@@ -4339,7 +4362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const checked = e.target.checked;
         document.body.classList.toggle('large-text-mode', checked);
         try { localStorage.setItem('wmb_large_text', checked); } catch(err) {}
-        showToast(checked ? '🔍 Large Readable Text activated' : 'Standard Text Size restored');
+        showToast(checked ? 'Large Readable Text activated' : 'Standard Text Size restored');
       });
     }
   }
@@ -4355,6 +4378,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
+    window.addEventListener('resize', () => {
+      if (state.mapInstance) state.mapInstance.invalidateSize();
+    });
     updateOnlineStatus();
   }
 
@@ -4378,6 +4404,7 @@ document.addEventListener('DOMContentLoaded', () => {
     findBestUpcomingBusForStop
   };
   window.SmartST = window.WMB;
+  window.TMB = window.WMB;
 
   // Start on Splash Screen
   navigateTo('splash-view');

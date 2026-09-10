@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Where's My Bus? — Live Bus Tracking</title>
+  <title>Track My Bus — Live Bus Tracking</title>
   <meta name="theme-color" content="#EF4444">
-  <meta name="description" content="Track MSRTC buses in real-time. Where's My Bus? — Live bus tracking for Maharashtra.">
+  <meta name="description" content="Track MSRTC buses in real-time. Track My Bus — Live bus tracking for Maharashtra.">
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
   
@@ -25,10 +25,10 @@
     <!-- Top App Header -->
     <header class="app-header">
       <div class="brand-section" data-screen-target="home-view">
-        <img src="assets/logo.png" alt="Where's My Bus? Logo" class="brand-logo-img">
+        <img src="assets/logo.png" alt="Track My Bus Logo" class="brand-logo-img">
         <div class="brand-divider"></div>
         <div class="brand-title">
-          <h1 data-i18n="appName">Where's My <span class="brand-accent">Bus?</span></h1>
+          <h1 data-i18n="appName">Track My <span class="brand-accent">Bus</span></h1>
           <span class="brand-tagline" data-i18n="tagline">KNOW BEFORE YOU WAIT.</span>
         </div>
       </div>
@@ -50,8 +50,8 @@
 
     <!-- Low Network Banner (shown dynamically when offline) -->
     <div class="offline-banner" id="offline-banner" style="display: none;">
-      <span>📡</span>
-      <span data-i18n="lowNetNotice">Where's My Bus? Offline Mode Active</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+      <span data-i18n="lowNetNotice">Track My Bus Offline Mode Active</span>
     </div>
 
     <!-- Main Dynamic Content Container -->
@@ -64,10 +64,10 @@
         <div class="splash-container">
           <div class="splash-hero-card">
             <div class="splash-logo-wrap">
-              <img src="assets/logo.png" alt="Where's My Bus? Logo" class="splash-logo-img">
+              <img src="assets/logo.png" alt="Track My Bus Logo" class="splash-logo-img">
             </div>
             <div class="splash-title-wrap">
-              <h1 data-i18n="appName">Where's My <span class="brand-accent">Bus?</span></h1>
+              <h1 data-i18n="appName">Track My <span class="brand-accent">Bus</span></h1>
               <p data-i18n="tagline">KNOW BEFORE YOU WAIT.</p>
               <div class="splash-msrtc-text">
                 MSRTC Digital Bus Stop System | महाराष्ट्र शासन
@@ -75,17 +75,28 @@
             </div>
 
             <div class="splash-features-grid">
-              <div class="splash-feat-pill">⚡ Real-time GPS</div>
-              <div class="splash-feat-pill">📍 Live Tracking</div>
-              <div class="splash-feat-pill">🗣️ Voice Alerts</div>
+              <div class="splash-feat-pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Real-time GPS</span>
+              </div>
+              <div class="splash-feat-pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                <span>Live Tracking</span>
+              </div>
+              <div class="splash-feat-pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                <span>Voice Alerts</span>
+              </div>
             </div>
 
-            <button class="btn btn-primary btn-lg" data-screen-target="scanner-view" data-i18n="scanQrBtn">
-              📷 Scan Bus Stop QR
+            <button class="btn btn-primary btn-lg" data-screen-target="home-view" data-i18n="exploreStopsBtn" id="btn-splash-explore">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 12 8"/></svg>
+              <span>Explore Bus Stops & Arrivals</span>
             </button>
 
-            <button class="btn btn-secondary btn-lg" data-screen-target="home-view" data-i18n="exploreStopsBtn" id="btn-splash-explore">
-              🚏 Explore Bus Stops & Arrivals
+            <button class="btn btn-secondary btn-lg" data-screen-target="scanner-view" data-i18n="scanQrBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+              <span>Scan Bus Stop QR</span>
             </button>
           </div>
 
@@ -143,11 +154,12 @@
             <!-- Nearby Bus Stops (GPS Detected) -->
             <div class="flex-between">
               <div style="text-align: left;">
-                <h3 class="card-subtitle" style="margin-bottom: 2px;">📍 Nearby Bus Stops</h3>
+                <h3 class="card-subtitle" style="margin-bottom: 2px;">Nearby Bus Stops</h3>
                 <span class="text-xs" id="nearby-gps-status" style="color: var(--status-green); font-weight: 600;">● Live GPS Detected</span>
               </div>
-              <button class="btn btn-sm btn-secondary" id="btn-detect-gps-stops" type="button" title="Refresh GPS Location" style="padding: 5px 10px; font-size: 11px;">
-                🔄 Locate Me
+              <button class="btn btn-sm btn-secondary" id="btn-detect-gps-stops" type="button" title="Refresh GPS Location" style="padding: 5px 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 5px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Locate Me</span>
               </button>
             </div>
 
@@ -162,61 +174,24 @@
            SCREEN 1: HOME TRANSPORTATION PORTAL
            =================================================================== -->
       <section id="home-view" class="screen-view active">
-        <!-- Hero Section: Title, Subtitle & Minimal Bus Illustration -->
+        <!-- Hero Section: Clean Typographic Header -->
         <div class="home-hero-section">
           <div class="home-hero-row">
             <div class="home-hero-text">
-              <h2 class="home-hero-title">Find your bus</h2>
-              <p class="home-hero-subtitle">Search routes, stops or places.</p>
-            </div>
-            <div class="home-hero-illustration" aria-hidden="true">
-              <svg width="140" height="85" viewBox="0 0 140 85" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Skyline silhouettes -->
-                <rect x="92" y="32" width="16" height="38" rx="2" fill="#BAE6FD" opacity="0.45"/>
-                <rect x="106" y="22" width="20" height="48" rx="2" fill="#93C5FD" opacity="0.4"/>
-                <rect x="124" y="34" width="14" height="36" rx="2" fill="#BAE6FD" opacity="0.5"/>
-                <!-- Trees / Foliage -->
-                <circle cx="22" cy="56" r="9" fill="#86EFAC" opacity="0.8"/>
-                <rect x="20.5" y="56" width="3" height="14" fill="#64748B"/>
-                <circle cx="32" cy="60" r="7" fill="#4ADE80" opacity="0.85"/>
-                <rect x="30.5" y="60" width="3" height="10" fill="#64748B"/>
-                <circle cx="132" cy="54" r="8" fill="#86EFAC" opacity="0.75"/>
-                <rect x="130.5" y="54" width="3" height="16" fill="#64748B"/>
-                <!-- Bus Stop Sign Pole -->
-                <line x1="118" y1="34" x2="118" y2="70" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="118" cy="32" r="8" fill="#0284C7"/>
-                <rect x="114" y="28" width="8" height="6.5" rx="1.5" fill="white"/>
-                <circle cx="115.5" cy="36" r="0.8" fill="#0284C7"/>
-                <circle cx="120.5" cy="36" r="0.8" fill="#0284C7"/>
-                <!-- Road line -->
-                <path d="M0 70L140 70" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/>
-                <!-- Blue Bus Body -->
-                <rect x="42" y="42" width="56" height="23" rx="4" fill="#0284C7"/>
-                <!-- Bus Top Accent & Shadow -->
-                <rect x="43" y="42" width="54" height="3" fill="#38BDF8" opacity="0.7"/>
-                <!-- Windows -->
-                <rect x="46" y="47" width="9" height="7.5" rx="1.5" fill="#FFFFFF"/>
-                <rect x="57" y="47" width="9" height="7.5" rx="1.5" fill="#FFFFFF"/>
-                <rect x="68" y="47" width="9" height="7.5" rx="1.5" fill="#FFFFFF"/>
-                <rect x="79" y="47" width="9" height="7.5" rx="1.5" fill="#FFFFFF"/>
-                <!-- Door outline -->
-                <rect x="90" y="47" width="5.5" height="17" rx="1" fill="#0369A1"/>
-                <!-- Headlight -->
-                <rect x="96" y="57" width="2" height="4" rx="1" fill="#FDE047"/>
-                <rect x="42" y="57" width="2" height="4" rx="1" fill="#EF4444"/>
-                <!-- Wheels -->
-                <circle cx="55" cy="65" r="5" fill="#1E293B"/>
-                <circle cx="55" cy="65" r="2" fill="#E2E8F0"/>
-                <circle cx="85" cy="65" r="5" fill="#1E293B"/>
-                <circle cx="85" cy="65" r="2" fill="#E2E8F0"/>
-              </svg>
+              <h2 class="home-hero-title">Track your bus</h2>
+              <p class="home-hero-subtitle">Search routes, stops or places across Maharashtra</p>
             </div>
           </div>
 
-          <!-- Clean Minimal Search Bar -->
+          <!-- Clean Modern Search Bar -->
           <div class="home-search-container">
             <div class="home-search-input-wrap">
-              <span class="home-search-icon">🔍</span>
+              <span class="home-search-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
               <input 
                 type="text" 
                 id="home-quick-search-input" 
@@ -235,11 +210,17 @@
         <div class="card home-nearby-card" id="home-nearby-card">
           <div class="home-nearby-header">
             <div class="home-nearby-title-wrap">
-              <span class="home-nearby-icon">📍</span>
+              <span class="home-nearby-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand-red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                  <circle cx="12" cy="9" r="2.5"/>
+                </svg>
+              </span>
               <span class="home-nearby-label">Nearby Bus Stop</span>
             </div>
             <button type="button" class="home-nearby-view-all" id="btn-home-nearby-view-all" data-screen-target="nearby-stops-view">
-              View All ➔
+              <span>View All</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
           </div>
 
@@ -252,7 +233,7 @@
           <div class="home-nearby-bus-box" id="home-nearby-bus-box">
             <div class="home-nearby-bus-left">
               <div class="home-bus-icon-circle">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="4" width="18" height="14" rx="2"/>
                   <path d="M7 18v2M17 18v2M3 10h18"/>
                   <circle cx="7.5" cy="14.5" r="1"/>
@@ -271,21 +252,16 @@
           </div>
         </div>
 
-        <!-- Pagination Dots -->
-        <div class="home-carousel-dots">
-          <span class="dot active"></span>
-          <span class="dot"></span>
-          <span class="dot"></span>
-        </div>
-
-        <!-- Quick Actions Section -->
+        <!-- Primary Quick Actions Section -->
         <div class="home-section-group">
-          <h3 class="home-section-title">Quick Actions</h3>
+          <div class="flex-between">
+            <h3 class="home-section-title">Quick Actions</h3>
+          </div>
           <div class="home-actions-grid">
             <!-- 1. Bus Routes -->
             <button class="home-action-card card-blue" id="btn-portal-bus-routes" data-screen-target="routes-view" type="button">
               <div class="home-action-icon-wrap">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="6" cy="19" r="3"/>
                   <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
                   <circle cx="18" cy="5" r="3"/>
@@ -297,9 +273,9 @@
             <!-- 2. Nearby Bus Stops -->
             <button class="home-action-card card-green" id="btn-portal-nearby-stops" data-screen-target="nearby-stops-view" type="button">
               <div class="home-action-icon-wrap">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" fill="#16A34A"/>
-                  <circle cx="12" cy="9" r="3" fill="white"/>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                  <circle cx="12" cy="9" r="2.5"/>
                 </svg>
               </div>
               <span class="home-action-label" data-i18n="btnNearbyStops">Nearby Bus Stops</span>
@@ -308,7 +284,7 @@
             <!-- 3. My Favourites -->
             <button class="home-action-card card-orange" id="btn-portal-my-favourites" type="button">
               <div class="home-action-icon-wrap">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="#EA580C">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                 </svg>
               </div>
@@ -317,59 +293,56 @@
           </div>
         </div>
 
-        <!-- More Options Section -->
+        <!-- Secondary Services & Support Section -->
         <div class="home-section-group">
-          <h3 class="home-section-title">More Options</h3>
-          <div class="home-actions-grid">
+          <div class="flex-between">
+            <h3 class="home-section-title">Support & Utilities</h3>
+          </div>
+          <div class="home-secondary-grid">
             <!-- 4. Feedback -->
-            <button class="home-action-card card-purple" id="btn-portal-feedback" type="button">
-              <div class="home-action-icon-wrap">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <path d="M21 11.5C21 16.75 16.75 21 11.5 21C9.6 21 7.8 20.4 6.3 19.4L2 21L3.6 16.7C2.6 15.2 2 13.4 2 11.5C2 6.25 6.25 2 11.5 2C16.75 2 21 6.25 21 11.5Z" fill="#9333EA"/>
-                  <circle cx="12" cy="11.5" r="4.5" fill="white"/>
-                  <path d="M12 9.5V12L13.5 13.5" stroke="#9333EA" stroke-width="1.8" stroke-linecap="round"/>
+            <button class="home-secondary-card card-purple" id="btn-portal-feedback" type="button">
+              <div class="home-sec-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
                 </svg>
               </div>
-              <span class="home-action-label" data-i18n="btnFeedback">Feedback</span>
+              <span class="home-sec-label" data-i18n="btnFeedback">Feedback</span>
             </button>
 
             <!-- 5. Grievance -->
-            <button class="home-action-card card-pink" id="btn-portal-grievance" type="button">
-              <div class="home-action-icon-wrap">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <circle cx="9" cy="8" r="4" fill="#DB2777"/>
-                  <path d="M2 19C2 15.5 5 14 9 14C13 14 16 15.5 16 19" fill="#DB2777"/>
-                  <rect x="15" y="4" width="8" height="8" rx="2" fill="#DB2777"/>
-                  <text x="19" y="10.5" fill="white" font-size="7" font-weight="900" text-anchor="middle">?</text>
+            <button class="home-secondary-card card-pink" id="btn-portal-grievance" type="button">
+              <div class="home-sec-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
               </div>
-              <span class="home-action-label" data-i18n="btnGrievance">Grievance</span>
+              <span class="home-sec-label" data-i18n="btnGrievance">Grievance</span>
             </button>
 
             <!-- 6. Help Line -->
-            <button class="home-action-card card-teal" id="btn-portal-helpline" type="button">
-              <div class="home-action-icon-wrap">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
-                  <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+            <button class="home-secondary-card card-teal" id="btn-portal-helpline" type="button">
+              <div class="home-sec-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                 </svg>
               </div>
-              <span class="home-action-label" data-i18n="btnHelpLine">Help Line</span>
+              <span class="home-sec-label" data-i18n="btnHelpLine">Help Line</span>
+            </button>
+
+            <!-- 7. Settings -->
+            <button class="home-secondary-card" id="btn-portal-settings" data-screen-target="accessibility-view" type="button">
+              <div class="home-sec-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </div>
+              <span class="home-sec-label" data-i18n="btnSettings">Settings</span>
             </button>
           </div>
         </div>
-
-        <!-- Settings Full Width Row -->
-        <button class="card home-settings-row" id="btn-portal-settings" data-screen-target="accessibility-view" type="button">
-          <div class="home-settings-left">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            <span class="home-settings-label" data-i18n="btnSettings">Settings</span>
-          </div>
-          <span class="home-settings-arrow">›</span>
-        </button>
       </section>
 
       <!-- ===================================================================
@@ -389,14 +362,17 @@
             <div class="nearby-gps-badge-group">
               <span class="nearby-page-gps-badge" id="nearby-page-gps-status">● Live GPS</span>
               <button class="btn btn-sm nearby-refresh-btn" id="btn-nearby-page-refresh" type="button">
-                🔄 Locate Me
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Locate Me</span>
               </button>
             </div>
           </div>
 
           <div class="nearby-hero-content">
             <div class="nearby-hero-title-row">
-              <div class="nearby-hero-icon-bubble">📍</div>
+              <div class="nearby-hero-icon-bubble">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              </div>
               <div>
                 <h2 class="nearby-hero-title">Nearby Bus Stops</h2>
                 <p class="nearby-hero-subtitle">Showing the 6 nearest bus stops by real-time GPS distance</p>
@@ -474,7 +450,11 @@
               </div>
             </div>
             <div class="routes-hero-icon-wrap">
-              <span class="routes-hero-badge-icon">🛣️</span>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="6" cy="19" r="3"/>
+                <path d="M9 19h8.5a4.5 4.5 0 0 0 4.5-4.5v-5a4.5 4.5 0 0 0-4.5-4.5H9"/>
+                <circle cx="6" cy="5" r="3"/>
+              </svg>
             </div>
           </div>
 
@@ -506,7 +486,10 @@
         <div class="routes-search-section">
           <!-- Search Field -->
           <div class="routes-search-input-wrap">
-            <span class="routes-search-icon">🔍</span>
+            <svg class="routes-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
             <input 
               type="text" 
               id="routes-search-input" 
@@ -522,9 +505,9 @@
           <!-- Category Filter Pills -->
           <div class="routes-filter-pills" id="routes-filter-pills">
             <button class="routes-pill active" data-category="all" data-i18n="filterAllRoutes">All Routes (8)</button>
-            <button class="routes-pill" data-category="pilgrim" data-i18n="filterPilgrim">🛕 Pilgrim Special</button>
-            <button class="routes-pill" data-category="intercity" data-i18n="filterIntercity">⚡ Intercity Express</button>
-            <button class="routes-pill" data-category="rural" data-i18n="filterRural">🌾 Rural Highway</button>
+            <button class="routes-pill" data-category="pilgrim" data-i18n="filterPilgrim">Pilgrim Special</button>
+            <button class="routes-pill" data-category="intercity" data-i18n="filterIntercity">Intercity Express</button>
+            <button class="routes-pill" data-category="rural" data-i18n="filterRural">Rural Highway</button>
           </div>
         </div>
 
@@ -538,25 +521,25 @@
            SCREEN 4: LIVE BUS TRACKING
            =================================================================== -->
       <section id="tracking-view" class="screen-view">
-        <div class="card">
-          <div class="flex-between">
+        <div class="card tracking-header-card">
+          <div class="flex-between tracking-header-main">
             <div>
-              <div class="flex-between gap-2" style="justify-content: flex-start; margin-bottom: 4px;">
+              <div class="flex-align gap-2 tracking-header-badges">
                 <span class="badge badge-blue">MSRTC Live GPS</span>
                 <span class="live-pill-dot"></span>
               </div>
               <h2 class="section-title" id="track-bus-number">MH 15 EG 4021</h2>
               <div class="section-subtitle" id="track-bus-route">Nashik CBS to Yeola Bus Stand</div>
             </div>
-            <div style="text-align: right;">
-              <span class="badge badge-green" id="track-bus-status-badge">● Moving (Live)</span>
-              <div class="text-sm text-primary" style="margin-top: 4px; font-weight: 700;" id="track-bus-road-info">NH 753J Highway</div>
+            <div class="tracking-header-right">
+              <span class="badge badge-green" id="track-bus-status-badge">● Moving (Live GPS)</span>
+              <div class="text-sm text-primary tracking-road-info" id="track-bus-road-info">NH 753J Highway</div>
             </div>
           </div>
 
           <!-- Quick Bus Selector Chips on Map -->
-          <div class="map-bus-selector-row mt-2">
-            <span class="text-xs" style="font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Switch Bus:</span>
+          <div class="map-bus-selector-row">
+            <span class="text-xs tracking-switch-label">Switch:</span>
             <div class="map-bus-chips" id="map-bus-chips-container">
               <!-- Dynamically rendered -->
             </div>
@@ -576,19 +559,33 @@
             </div>
           </div>
 
-          <!-- Floating Map Controls (Google Maps Style) -->
+          <!-- Floating Map Controls (Modern Floating Dock) -->
           <div class="map-controls-floating">
             <button class="map-ctrl-btn" id="btn-toggle-map-layer" title="Switch Map Layer (OSM / Esri / Satellite)">
-              <span id="layer-icon-display">🚏</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                <polyline points="2 17 12 22 22 17"/>
+                <polyline points="2 12 12 17 22 12"/>
+              </svg>
             </button>
             <button class="map-ctrl-btn active" id="btn-toggle-follow-bus" title="Auto-Follow Bus">
-              <span>🧭</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+              </svg>
             </button>
             <button class="map-ctrl-btn" id="btn-locate-user-stop" title="Center on My Stop">
-              <span>🚏</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                <circle cx="12" cy="9" r="2.5"/>
+              </svg>
             </button>
             <button class="map-ctrl-btn" id="btn-fit-full-route" title="View Full Route">
-              <span>📐</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"/>
+                <polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/>
+                <line x1="3" y1="21" x2="10" y2="14"/>
+              </svg>
             </button>
           </div>
 
@@ -676,7 +673,7 @@
         <div class="card bus-contextual-reports-card" id="bus-contextual-reports-card" data-screen-target="community-view" style="cursor:pointer; padding: 12px 16px; background: rgba(254, 243, 199, 0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md);">
           <div class="flex-between">
             <div class="flex-align gap-2">
-              <span style="font-size: 16px;">📢</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-accent); flex-shrink: 0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               <div>
                 <strong style="font-size: 13px;">Passenger Live Reports</strong>
                 <div class="text-sm" id="bus-detail-reports-count">Recent updates from commuters on this route</div>
@@ -757,7 +754,10 @@
         <div class="card">
           <h2 class="card-title" data-i18n="journeyPlanner">Journey Planner</h2>
           <div class="search-box-wrap mt-2">
-            <span class="search-icon-pos">🔍</span>
+            <svg class="search-icon-pos" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
             <input type="text" id="journey-dest-input" class="search-input" placeholder="Enter destination e.g. Pune, Nashik CBS, Shirdi, Yeola..." />
           </div>
           <button class="btn btn-primary btn-lg mt-2" id="btn-search-journey" data-i18n="findBuses">
@@ -766,12 +766,12 @@
         </div>
 
         <div id="journey-results-container">
-          <!-- Populated on search -->
+          <!-- Dynamic connection cards from app.js -->
         </div>
       </section>
 
       <!-- ===================================================================
-           SCREEN 9: NOTIFICATIONS
+           SCREEN 9: NOTIFICATIONS & ALERTS
            =================================================================== -->
       <section id="notifications-view" class="screen-view">
         <div class="card">
@@ -823,8 +823,11 @@
             Click the speaker below to hear real-time audio announcements in your chosen language.
           </p>
 
-          <button class="large-speaker-btn" id="voice-speaker-hero-btn">
-            🔊
+          <button class="large-speaker-btn" id="voice-speaker-hero-btn" aria-label="Play Announcement">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
           </button>
 
           <div class="voice-cta-text">
@@ -946,7 +949,12 @@
         <!-- Logged Out State -->
         <div id="account-logged-out" class="account-state-wrap">
           <div class="card text-center account-auth-hero">
-            <div class="account-avatar-placeholder">👤</div>
+            <div class="account-avatar-placeholder">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
             <h2 class="card-title mt-2" data-i18n="accountTitle">My Account</h2>
             <p class="section-subtitle mt-1">Sign in to personalize your transit experience across devices.</p>
             
@@ -961,28 +969,46 @@
             <h3 class="card-subtitle">Account Benefits</h3>
             <ul class="account-benefits-list">
               <li>
-                <span class="benefit-icon">⭐</span>
+                <span class="benefit-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </span>
                 <div>
                   <strong>Sync Favorite Stops</strong>
                   <div class="text-sm">Access your daily stops on any phone or browser</div>
                 </div>
               </li>
               <li>
-                <span class="benefit-icon">🔔</span>
+                <span class="benefit-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h24s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                </span>
                 <div>
                   <strong>Save Alert Preferences</strong>
                   <div class="text-sm">Customize bus arrival and delay notifications</div>
                 </div>
               </li>
               <li>
-                <span class="benefit-icon">📢</span>
+                <span class="benefit-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </span>
                 <div>
                   <strong>My Submitted Reports</strong>
                   <div class="text-sm">Track commuter feedback and helpful upvotes</div>
                 </div>
               </li>
               <li>
-                <span class="benefit-icon">⚙️</span>
+                <span class="benefit-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                </span>
                 <div>
                   <strong>Cross-Device Settings</strong>
                   <div class="text-sm">Keep your language and accessibility preferences</div>
@@ -990,7 +1016,8 @@
               </li>
             </ul>
             <div class="account-reassurance-note mt-3">
-              🛡️ <strong>No account required:</strong> You can always scan QR codes, view live buses, and check timetables freely without signing in.
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <strong>No account required:</strong> You can always scan QR codes, view live buses, and check timetables freely without signing in.
             </div>
           </div>
         </div>
@@ -999,7 +1026,12 @@
         <div id="account-logged-in" class="account-state-wrap" style="display: none;">
           <div class="card">
             <div class="account-profile-header">
-              <div class="account-profile-avatar" id="account-user-avatar">👤</div>
+              <div class="account-profile-avatar" id="account-user-avatar">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
               <div>
                 <h2 class="account-user-name" id="account-user-name">Passenger Name</h2>
                 <div class="account-user-phone" id="account-user-phone">+91 98XXX XXXXX</div>
@@ -1029,34 +1061,63 @@
           <!-- Account Settings List -->
           <div class="card account-menu-card">
             <button class="account-menu-item" id="account-menu-favorites">
-              <span class="item-icon">⭐</span>
+              <span class="item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </span>
               <span class="item-label">Manage Favorite Stops</span>
               <span class="item-arrow">➔</span>
             </button>
             <button class="account-menu-item" data-screen-target="notifications-view">
-              <span class="item-icon">🔔</span>
+              <span class="item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h24s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+              </span>
               <span class="item-label">Alerts & Notifications</span>
               <span class="item-arrow">➔</span>
             </button>
             <button class="account-menu-item" id="account-menu-my-reports">
-              <span class="item-icon">📢</span>
+              <span class="item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </span>
               <span class="item-label">My Community Reports</span>
               <span class="item-arrow">➔</span>
             </button>
             <button class="account-menu-item" data-screen-target="accessibility-view">
-              <span class="item-icon">🌐</span>
+              <span class="item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="2" y1="12" x2="22" y2="12"/>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+              </span>
               <span class="item-label">App Language</span>
               <span class="item-arrow">➔</span>
             </button>
             <button class="account-menu-item" data-screen-target="accessibility-view">
-              <span class="item-icon">♿</span>
+              <span class="item-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </span>
               <span class="item-label">Accessibility Settings</span>
               <span class="item-arrow">➔</span>
             </button>
           </div>
 
-          <button class="btn btn-secondary w-full mt-3" id="btn-account-signout" data-i18n="signOut">
-            🚪 Sign Out
+          <button class="btn btn-secondary w-full mt-3" id="btn-account-signout" data-i18n="signOut" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            <span>Sign Out</span>
           </button>
         </div>
       </section>
@@ -1128,11 +1189,11 @@
       <div class="mt-4">
         <label class="label-text">Feedback Category:</label>
         <select id="feedback-category-select" class="search-input mt-2 select-input">
-          <option value="bug">🐛 Bug / Technical Problem</option>
-          <option value="wrong_bus">🚌 Wrong Bus Information</option>
-          <option value="wrong_stop">🚏 Wrong Stop Information</option>
-          <option value="feature">💡 Suggest a Feature</option>
-          <option value="general">📝 General Feedback</option>
+          <option value="bug">Bug / Technical Problem</option>
+          <option value="wrong_bus">Wrong Bus Information</option>
+          <option value="wrong_stop">Wrong Stop Information</option>
+          <option value="feature">Suggest a Feature</option>
+          <option value="general">General Feedback</option>
         </select>
 
         <label class="label-text-block">Your Message / Experience:</label>
@@ -1201,7 +1262,7 @@
   <div class="modal-backdrop" id="how-it-works-modal">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">How Where's My Bus? Works</h3>
+        <h3 class="modal-title">How Track My Bus Works</h3>
         <button class="icon-btn modal-close-trigger">✕</button>
       </div>
 
@@ -1275,7 +1336,7 @@
           Search Available Buses ➔
         </button>
 
-        <div class="p-2 mt-3 text-center text-xs" style="background: rgba(14,165,233,0.06); border-radius: 8px; color: var(--text-secondary);">
+        <div class="p-2 mt-3 text-center text-xs" style="background: rgba(59, 130, 246, 0.06); border-radius: 8px; color: var(--text-secondary);">
           Official MSRTC online reservation counter: <strong>msrtc.maharashtra.gov.in</strong>
         </div>
       </div>
@@ -1302,7 +1363,8 @@
             Nashik CBS ➔ Yeola Bus Stand
           </div>
           <div class="text-xs text-secondary mt-1">
-            🚌 Lal Dabba Ordinary Express (MH 15 EG 4021)
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M19 17h2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/><path d="M4 11h16"/><path d="M4 7h16"/></svg>
+            <span>Lal Dabba Ordinary Express (MH 15 EG 4021)</span>
           </div>
 
           <div class="flex-between mt-3 p-2" style="background: var(--bg-card); border-radius: 8px; border: 1px dashed var(--border-subtle);">
@@ -1320,8 +1382,9 @@
             </div>
           </div>
 
-          <button class="btn btn-outline-primary btn-sm w-full mt-3" id="btn-show-ticket-qr">
-            📱 Show Conductor Verification QR
+          <button class="btn btn-outline-primary btn-sm w-full mt-3" id="btn-show-ticket-qr" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Show Conductor Verification QR</span>
           </button>
         </div>
 
@@ -1369,11 +1432,13 @@
         </div>
 
         <div class="flex-between gap-2 mt-3">
-          <button class="btn btn-outline-primary btn-sm" style="flex:1;" id="btn-renew-pass">
-            🔄 Renew Pass
+          <button class="btn btn-outline-primary btn-sm" style="flex:1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;" id="btn-renew-pass">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>Renew Pass</span>
           </button>
-          <button class="btn btn-secondary btn-sm" style="flex:1;" id="btn-download-pass">
-            📥 Save Pass
+          <button class="btn btn-secondary btn-sm" style="flex:1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;" id="btn-download-pass">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Save Pass</span>
           </button>
         </div>
       </div>
@@ -1429,7 +1494,7 @@
 
       <div class="mt-3" style="display: flex; flex-direction: column; gap: 10px;">
         <a href="tel:1800221250" class="btn btn-outline-primary" style="justify-content: flex-start; padding: 12px 14px; text-decoration: none;">
-          <span style="font-size: 20px; margin-right: 10px;">📞</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px; flex-shrink: 0;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           <div style="text-align: left;">
             <div style="font-weight: 800; font-size: 14px;">1800-22-1250 (Toll-Free)</div>
             <div class="text-xs" style="color: var(--text-secondary);">24x7 MSRTC Central Helpline & Complaints</div>
@@ -1437,7 +1502,7 @@
         </a>
 
         <a href="tel:02532309310" class="btn btn-secondary" style="justify-content: flex-start; padding: 12px 14px; text-decoration: none;">
-          <span style="font-size: 20px; margin-right: 10px;">🏢</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px; flex-shrink: 0;"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22.01"/><line x1="15" y1="22" x2="15" y2="22.01"/><line x1="9" y1="6" x2="9" y2="6.01"/><line x1="15" y1="6" x2="15" y2="6.01"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/><line x1="9" y1="14" x2="9" y2="14.01"/><line x1="15" y1="14" x2="15" y2="14.01"/><line x1="9" y1="18" x2="9" y2="18.01"/><line x1="15" y1="18" x2="15" y2="18.01"/></svg>
           <div style="text-align: left;">
             <div style="font-weight: 800; font-size: 14px;">0253-2309310</div>
             <div class="text-xs" style="color: var(--text-secondary);">Nashik Division Traffic Control Room</div>
@@ -1445,7 +1510,7 @@
         </a>
 
         <a href="tel:02559267033" class="btn btn-secondary" style="justify-content: flex-start; padding: 12px 14px; text-decoration: none;">
-          <span style="font-size: 20px; margin-right: 10px;">🚏</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px; flex-shrink: 0;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
           <div style="text-align: left;">
             <div style="font-weight: 800; font-size: 14px;">02559-267033</div>
             <div class="text-xs" style="color: var(--text-secondary);">Yeola Bus Stand Inquiry & Station Master</div>
@@ -1454,13 +1519,13 @@
 
         <div class="flex-between gap-2 mt-2">
           <a href="tel:112" class="btn btn-outline-danger" style="flex:1; padding: 10px; font-size: 13px; text-decoration: none; text-align: center;">
-            🚨 Police: 112
+            Police: 112
           </a>
           <a href="tel:108" class="btn btn-outline-danger" style="flex:1; padding: 10px; font-size: 13px; text-decoration: none; text-align: center;">
-            🚑 Ambulance: 108
+            Ambulance: 108
           </a>
           <a href="tel:1090" class="btn btn-outline-danger" style="flex:1; padding: 10px; font-size: 13px; text-decoration: none; text-align: center;">
-            👩 Women: 1090
+            Women: 1090
           </a>
         </div>
       </div>
@@ -1471,7 +1536,7 @@
   <div class="modal-backdrop" id="home-favorites-modal">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">⭐ My Favourites</h3>
+        <h3 class="modal-title">My Favourites</h3>
         <button class="icon-btn modal-close-trigger">✕</button>
       </div>
 
@@ -1492,7 +1557,7 @@
     <div class="modal-drawer">
       <div class="flex-between">
         <div class="flex-align gap-2">
-          <h3 class="modal-title">📍 Nearby Bus Stops</h3>
+          <h3 class="modal-title">Nearby Bus Stops</h3>
           <span class="text-xs" id="portal-nearby-gps-status" style="color: var(--status-green); font-weight: 700;">● Live GPS</span>
         </div>
         <button class="icon-btn modal-close-trigger">✕</button>
@@ -1500,8 +1565,9 @@
 
       <div class="flex-between mt-2 mb-2">
         <span class="text-xs text-secondary">6 nearest stops ranked by actual distance from your location</span>
-        <button class="btn btn-sm btn-secondary" id="btn-portal-locate-me" type="button" style="padding: 4px 10px; font-size: 11px;">
-          🔄 Locate Me
+        <button class="btn btn-sm btn-secondary" id="btn-portal-locate-me" type="button" style="padding: 4px 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 5px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span>Locate Me</span>
         </button>
       </div>
 
@@ -1518,9 +1584,9 @@
   <aside class="side-drawer" id="side-drawer">
     <div class="drawer-header">
       <div class="drawer-brand">
-        <img src="assets/logo.png" alt="Where's My Bus? Logo" class="drawer-logo-img">
+        <img src="assets/logo.png" alt="Track My Bus Logo" class="drawer-logo-img">
         <div>
-          <h2 class="drawer-title">Where's My <span class="brand-accent">Bus?</span></h2>
+          <h2 class="drawer-title">Track My <span class="brand-accent">Bus</span></h2>
           <p class="drawer-tagline">KNOW BEFORE YOU WAIT.</p>
         </div>
       </div>
@@ -1529,56 +1595,82 @@
     
     <div class="drawer-nav-list">
       <button class="drawer-link-item" data-screen-target="home-view">
-        <span class="drawer-item-icon">🏠</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="navHome">Home</span>
       </button>
       <button class="drawer-link-item" data-screen-target="tracking-view">
-        <span class="drawer-item-icon">🗺️</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="navLiveMap">Live Map</span>
       </button>
       <button class="drawer-link-item" data-screen-target="scanner-view">
-        <span class="drawer-item-icon">📷</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="navScanner">Scan QR</span>
       </button>
       <button class="drawer-link-item" data-screen-target="nearby-stops-view">
-        <span class="drawer-item-icon">📍</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="btnNearbyStops">Nearby Bus Stops</span>
       </button>
       <button class="drawer-link-item" data-screen-target="routes-view">
-        <span class="drawer-item-icon">🛣️</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a4.5 4.5 0 0 0 4.5-4.5v-5a4.5 4.5 0 0 0-4.5-4.5H9"/><circle cx="6" cy="5" r="3"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="btnBusRoutes">Bus Routes</span>
       </button>
       <button class="drawer-link-item" data-screen-target="planner-view">
-        <span class="drawer-item-icon">🧭</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="navPlanner">Journey Planner</span>
       </button>
       <button class="drawer-link-item" data-screen-target="schedule-view">
-        <span class="drawer-item-icon">📅</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="btnTimeTable">Time Table</span>
       </button>
       <button class="drawer-link-item" data-screen-target="account-view">
-        <span class="drawer-item-icon">👤</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="navAccount">My Account</span>
       </button>
       <button class="drawer-link-item" data-screen-target="voice-view">
-        <span class="drawer-item-icon">🔊</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </span>
         <span class="drawer-item-label">Voice Announcements</span>
       </button>
       <button class="drawer-link-item" data-screen-target="accessibility-view">
-        <span class="drawer-item-icon">♿</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </span>
         <span class="drawer-item-label">Accessibility & Display</span>
       </button>
       <hr class="drawer-divider">
       <button class="drawer-link-item" id="drawer-btn-feedback">
-        <span class="drawer-item-icon">💬</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="btnFeedback">Feedback</span>
       </button>
       <button class="drawer-link-item" id="drawer-btn-grievance">
-        <span class="drawer-item-icon">⚠️</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="btnGrievance">Grievance</span>
       </button>
       <button class="drawer-link-item" id="drawer-btn-helpline">
-        <span class="drawer-item-icon">📞</span>
+        <span class="drawer-item-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </span>
         <span class="drawer-item-label" data-i18n="btnHelpLine">Help Line</span>
       </button>
     </div>
