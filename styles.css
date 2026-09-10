@@ -6,59 +6,84 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Apple System Typography Stack */
-  --apple-font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", -apple-system-headline, "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif;
+  /* Transit Signal Maharashtra Typography Stack */
+  --apple-font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif;
 
-  /* System Backgrounds (iOS Inset Grouped Table System) */
-  --apple-bg-primary: #F2F2F7;               /* systemGroupedBackground */
-  --apple-bg-secondary: #FFFFFF;             /* secondarySystemGroupedBackground */
-  --apple-bg-tertiary: #E5E5EA;              /* tertiarySystemGroupedBackground */
+  /* Transit Signal Maharashtra Palette Tokens */
+  --ts-ink: #1E2430;                         /* High-contrast neutral ink */
+  --ts-paper: #F7F5F0;                       /* Warm stone paper background */
+  --ts-surface: #FFFFFF;                     /* Pure white card surface */
+  --ts-surface-subtle: #ECE8E1;              /* Inset container & segmented control track */
+  
+  --ts-indigo: #1356C5;                      /* Deep Railway / Indigo Blue (Navigation & Primary Actions) */
+  --ts-indigo-hover: #0E44A1;
+  --ts-indigo-subtle: rgba(19, 86, 197, 0.08);
+  --ts-indigo-rgb: 19, 86, 197;
+
+  --ts-vermilion: #C7352E;                   /* MSRTC Heritage Vermilion (Identity, Origin/Dest Anchors, Alerts) */
+  --ts-vermilion-hover: #A82822;
+  --ts-vermilion-subtle: rgba(199, 53, 46, 0.09);
+
+  --ts-live: #137A45;                        /* Truthful Live GPS Green */
+  --ts-live-subtle: rgba(19, 122, 69, 0.10);
+  --ts-delay: #B66300;                       /* Delay Warning Amber */
+  --ts-delay-subtle: rgba(182, 99, 0, 0.10);
+  --ts-disruption: #B42318;                  /* Disruption Red */
+  --ts-disruption-subtle: rgba(180, 35, 24, 0.10);
+
+  --ts-border: rgba(30, 36, 48, 0.10);
+  --ts-border-subtle: rgba(30, 36, 48, 0.06);
+
+  /* System Backgrounds */
+  --apple-bg-primary: var(--ts-paper);
+  --apple-bg-secondary: var(--ts-surface);
+  --apple-bg-tertiary: var(--ts-surface-subtle);
 
   /* Liquid Glass Functional Layer */
-  --apple-glass-bg: rgba(255, 255, 255, 0.82);
-  --apple-glass-border: rgba(0, 0, 0, 0.08);
+  --apple-glass-bg: rgba(247, 245, 240, 0.88);
+  --apple-glass-border: var(--ts-border);
   --apple-glass-blur: blur(24px) saturate(180%);
 
-  /* Foreground Labels (High Contrast WCAG AA compliant) */
-  --apple-label-primary: #1C1C1E;            /* 15.2:1 contrast against #FFF */
-  --apple-label-secondary: #636366;          /* 5.2:1 contrast (> 4.5:1 WCAG AA) */
-  --apple-label-tertiary: #8E8E93;           /* 3.1:1 contrast for icons/glyphs */
-  --apple-separator: rgba(60, 60, 67, 0.12);
-  --apple-separator-opaque: #C6C6C8;
+  /* Foreground Labels */
+  --apple-label-primary: var(--ts-ink);
+  --apple-label-secondary: #586174;
+  --apple-label-tertiary: #8A94A6;
+  --apple-separator: var(--ts-border);
+  --apple-separator-opaque: #DCD8D0;
 
   /* Brand & Semantic Accents */
-  --apple-tint: #007AFF;                     /* iOS System Transit Blue */
-  --apple-tint-hover: #0062CC;
-  --apple-tint-subtle: rgba(0, 122, 255, 0.10);
-  --apple-tint-rgb: 0, 122, 255;
+  --apple-tint: var(--ts-indigo);
+  --apple-tint-hover: var(--ts-indigo-hover);
+  --apple-tint-subtle: var(--ts-indigo-subtle);
+  --apple-tint-rgb: var(--ts-indigo-rgb);
 
-  --msrtc-crimson: #C92A2A;                  /* MSRTC Heritage Red */
-  --msrtc-crimson-hover: #A61E1E;
-  --msrtc-crimson-subtle: rgba(201, 42, 42, 0.10);
-  --msrtc-gold: #F59E0B;
+  --msrtc-crimson: var(--ts-vermilion);
+  --msrtc-crimson-hover: var(--ts-vermilion-hover);
+  --msrtc-crimson-subtle: var(--ts-vermilion-subtle);
+  --msrtc-gold: #D97706;
 
-  --apple-green: #34C759;                    /* System Green (Live GPS / On-Time) */
-  --apple-green-subtle: rgba(52, 199, 89, 0.12);
-  --apple-orange: #FF9500;                   /* System Orange (Delays / Alerts) */
-  --apple-orange-subtle: rgba(255, 149, 0, 0.12);
-  --apple-red: #FF3B30;                      /* System Red (Emergency / Cancelled) */
-  --apple-red-subtle: rgba(255, 59, 48, 0.12);
+  --apple-green: var(--ts-live);
+  --apple-green-subtle: var(--ts-live-subtle);
+  --apple-orange: var(--ts-delay);
+  --apple-orange-subtle: var(--ts-delay-subtle);
+  --apple-red: var(--ts-disruption);
+  --apple-red-subtle: var(--ts-disruption-subtle);
 
   /* Legacy Backward-Compatibility Mapping */
-  --brand-red: var(--msrtc-crimson);
-  --brand-accent: var(--apple-orange);
-  --brand-dark: var(--apple-label-primary);
-  --brand-blue: var(--apple-tint);
-  --brand-bg: var(--apple-bg-primary);
+  --brand-red: var(--ts-vermilion);
+  --brand-accent: var(--ts-vermilion);
+  --brand-dark: var(--ts-ink);
+  --brand-blue: var(--ts-indigo);
+  --brand-bg: var(--ts-paper);
 
-  --primary-blue: var(--apple-tint);
-  --primary-blue-hover: var(--apple-tint-hover);
-  --primary-blue-light: var(--apple-tint-subtle);
-  --primary-blue-rgb: var(--apple-tint-rgb);
+  --primary-blue: var(--ts-indigo);
+  --primary-blue-hover: var(--ts-indigo-hover);
+  --primary-blue-light: var(--ts-indigo-subtle);
+  --primary-blue-rgb: var(--ts-indigo-rgb);
 
-  --primary-red: var(--msrtc-crimson);
-  --primary-red-hover: var(--msrtc-crimson-hover);
-  --primary-red-light: var(--msrtc-crimson-subtle);
+  --primary-red: var(--ts-vermilion);
+  --primary-red-hover: var(--ts-vermilion-hover);
+  --primary-red-light: var(--ts-vermilion-subtle);
 
   --accent-gold: var(--apple-orange);
   --accent-gold-light: var(--apple-orange-subtle);
@@ -71,16 +96,16 @@
   --status-amber: var(--apple-orange);
   --status-grey: var(--apple-label-secondary);
 
-  --msrtc-red: var(--msrtc-crimson);
+  --msrtc-red: var(--ts-vermilion);
 
-  --bg-main: var(--apple-bg-primary);
-  --bg-card: var(--apple-bg-secondary);
+  --bg-main: var(--ts-paper);
+  --bg-card: var(--ts-surface);
   --bg-card-rgb: 255, 255, 255;
-  --bg-elevated: var(--apple-bg-secondary);
-  --border-subtle: var(--apple-separator);
-  --border-focus: var(--apple-tint);
+  --bg-elevated: var(--ts-surface);
+  --border-subtle: var(--ts-border);
+  --border-focus: var(--ts-indigo);
 
-  --text-main: var(--apple-label-primary);
+  --text-main: var(--ts-ink);
   --text-secondary: var(--apple-label-secondary);
   --text-muted: var(--apple-label-tertiary);
   --text-on-primary: #FFFFFF;
@@ -94,11 +119,11 @@
   --radius-full: 9999px;
 
   /* Subtle Diffuse Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.08);
-  --shadow-sheet: 0 -4px 24px rgba(0, 0, 0, 0.12);
-  --shadow-glow: 0 0 16px rgba(0, 122, 255, 0.18);
+  --shadow-sm: 0 1px 3px rgba(30, 36, 48, 0.04);
+  --shadow-md: 0 4px 14px rgba(30, 36, 48, 0.06);
+  --shadow-lg: 0 8px 28px rgba(30, 36, 48, 0.08);
+  --shadow-sheet: 0 -4px 24px rgba(30, 36, 48, 0.12);
+  --shadow-glow: 0 0 16px rgba(19, 86, 197, 0.18);
 
   /* Typography Scale */
   --font-base: 15px;
@@ -122,49 +147,65 @@
    -------------------------------------------------------------------------- */
 
 body.dark-mode {
-  --apple-bg-primary: #000000;               /* iOS Pure Black Grouped Background */
-  --apple-bg-secondary: #1C1C1E;             /* secondarySystemGroupedBackground in Dark */
-  --apple-bg-tertiary: #2C2C2E;              /* tertiarySystemGroupedBackground */
+  --ts-ink: #F3F4F6;
+  --ts-paper: #11141A;
+  --ts-surface: #1A1F29;
+  --ts-surface-subtle: #252C3A;
+  --ts-indigo: #4D8BFF;
+  --ts-indigo-hover: #70A2FF;
+  --ts-indigo-subtle: rgba(77, 139, 255, 0.15);
+  --ts-vermilion: #FF5A52;
+  --ts-vermilion-subtle: rgba(255, 90, 82, 0.15);
+  --ts-live: #22C55E;
+  --ts-live-subtle: rgba(34, 197, 94, 0.15);
+  --ts-delay: #FBBF24;
+  --ts-delay-subtle: rgba(251, 191, 36, 0.15);
+  --ts-disruption: #F87171;
+  --ts-disruption-subtle: rgba(248, 113, 113, 0.15);
+  --ts-border: rgba(255, 255, 255, 0.10);
 
-  --apple-glass-bg: rgba(28, 28, 30, 0.82);
-  --apple-glass-border: rgba(255, 255, 255, 0.12);
+  --apple-bg-primary: var(--ts-paper);
+  --apple-bg-secondary: var(--ts-surface);
+  --apple-bg-tertiary: var(--ts-surface-subtle);
+
+  --apple-glass-bg: rgba(26, 31, 41, 0.88);
+  --apple-glass-border: var(--ts-border);
   --apple-glass-blur: blur(28px) saturate(200%);
 
-  --apple-label-primary: #FFFFFF;            /* 15.8:1 contrast */
-  --apple-label-secondary: #8E8E93;          /* 5.4:1 contrast */
-  --apple-label-tertiary: #636366;           /* 3.1:1 contrast */
-  --apple-separator: rgba(84, 84, 88, 0.36);
-  --apple-separator-opaque: #38383A;
+  --apple-label-primary: var(--ts-ink);
+  --apple-label-secondary: #9CA3AF;
+  --apple-label-tertiary: #6B7280;
+  --apple-separator: var(--ts-border);
+  --apple-separator-opaque: #374151;
 
-  --apple-tint: #0A84FF;                     /* iOS Dark Mode Blue */
-  --apple-tint-hover: #409CFF;
-  --apple-tint-subtle: rgba(10, 132, 255, 0.18);
-  --apple-tint-rgb: 10, 132, 255;
+  --apple-tint: var(--ts-indigo);
+  --apple-tint-hover: var(--ts-indigo-hover);
+  --apple-tint-subtle: var(--ts-indigo-subtle);
 
-  --msrtc-crimson: #FF453A;
-  --msrtc-crimson-hover: #FF6961;
-  --msrtc-crimson-subtle: rgba(255, 69, 58, 0.18);
+  --msrtc-crimson: var(--ts-vermilion);
+  --msrtc-crimson-hover: #FF7B74;
+  --msrtc-crimson-subtle: var(--ts-vermilion-subtle);
 
-  --apple-green: #30D158;
-  --apple-green-subtle: rgba(48, 209, 88, 0.18);
-  --apple-orange: #FF9F0A;
-  --apple-orange-subtle: rgba(255, 159, 10, 0.18);
-  --apple-red: #FF453A;
-  --apple-red-subtle: rgba(255, 69, 58, 0.18);
+  --apple-green: var(--ts-live);
+  --apple-green-subtle: var(--ts-live-subtle);
+  --apple-orange: var(--ts-delay);
+  --apple-orange-subtle: var(--ts-delay-subtle);
+  --apple-red: var(--ts-disruption);
+  --apple-red-subtle: var(--ts-disruption-subtle);
 
-  --bg-main: var(--apple-bg-primary);
-  --bg-card: var(--apple-bg-secondary);
-  --bg-card-rgb: 28, 28, 30;
-  --bg-elevated: var(--apple-bg-tertiary);
-  --border-subtle: var(--apple-separator);
-  --text-main: var(--apple-label-primary);
+  --bg-main: var(--ts-paper);
+  --bg-card: var(--ts-surface);
+  --bg-card-rgb: 26, 31, 41;
+  --bg-elevated: var(--ts-surface-subtle);
+  --border-subtle: var(--ts-border);
+  --text-main: var(--ts-ink);
   --text-secondary: var(--apple-label-secondary);
   --text-muted: var(--apple-label-tertiary);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.6);
-  --primary-blue-light: var(--apple-tint-subtle);
-  --brand-dark: var(--apple-label-primary);
-  --brand-red: var(--msrtc-crimson);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --primary-blue-light: var(--ts-indigo-subtle);
+  --brand-dark: var(--ts-ink);
+  --brand-red: var(--ts-vermilion);
 }
 
 body.high-contrast {
@@ -433,17 +474,150 @@ html, body {
   transform: scale(0.94);
 }
 
+/* Contextual App Bar / Navigation Header */
+.header-child-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.header-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 8px 0 0;
+  background: transparent;
+  border: none;
+  color: var(--ts-indigo);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: var(--radius-sm);
+  transition: opacity var(--transition-fast);
+}
+
+.header-back-btn:hover {
+  opacity: 0.8;
+}
+
+.header-back-btn:active {
+  transform: scale(0.97);
+}
+
+.header-back-btn svg {
+  flex-shrink: 0;
+}
+
+.header-context-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ts-ink);
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Truthful Data Freshness Badges */
+.freshness-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: 0.5px solid transparent;
+  line-height: 1.2;
+}
+
+.freshness-tag.live {
+  background: var(--ts-live-subtle);
+  color: var(--ts-live);
+  border-color: rgba(19, 122, 69, 0.2);
+}
+
+.freshness-tag.estimated {
+  background: var(--ts-delay-subtle);
+  color: var(--ts-delay);
+  border-color: rgba(182, 99, 0, 0.2);
+}
+
+.freshness-tag.scheduled {
+  background: var(--ts-surface-subtle);
+  color: var(--apple-label-secondary);
+  border-color: var(--ts-border);
+}
+
+.freshness-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.freshness-tag.live .freshness-dot {
+  background: var(--ts-live);
+  animation: pulse-live 2s infinite ease-in-out;
+}
+
+.freshness-tag.estimated .freshness-dot {
+  background: var(--ts-delay);
+}
+
+.freshness-tag.scheduled .freshness-dot {
+  background: var(--apple-label-tertiary);
+}
+
+@keyframes pulse-live {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+}
+
+/* Prototype / Unofficial Callout Notice */
+.prototype-notice-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--ts-delay-subtle);
+  border: 0.5px solid rgba(182, 99, 0, 0.3);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ts-ink);
+}
+
+.prototype-notice-callout svg {
+  flex-shrink: 0;
+  color: var(--ts-delay);
+  margin-top: 2px;
+}
+
+.prototype-notice-callout a {
+  color: var(--ts-indigo);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Offline / Low Net Notice */
 .offline-banner {
-  background-color: #FEF3C7;
-  color: #92400E;
+  background-color: var(--ts-delay-subtle);
+  color: var(--ts-delay);
   padding: 8px 16px;
   font-size: 12px;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
-  border-bottom: 0.5px solid #FCD34D;
+  border-bottom: 0.5px solid rgba(182, 99, 0, 0.2);
 }
 
 /* Bottom Navigation Bar (Authentic iOS Floating Liquid Glass Tab Bar) */

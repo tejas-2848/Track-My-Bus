@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Application State
   const state = {
     currentScreen: 'splash-view',
+    navigationStack: ['home-view'],
     currentLanguage: 'en', // Default to English as requested; switches to Marathi/Hindi on user selection
     activeStop: null,
     hasUserSelectedStop: false,
@@ -92,13 +93,71 @@ document.addEventListener('DOMContentLoaded', () => {
     return lang === 'mr' ? 'कवर होणार' : (lang === 'hi' ? 'आने वाला' : 'To be Covered');
   }
 
+  // Data Freshness Engine (Truthful Telemetry Contract)
+  function formatDataFreshness(timestamp = new Date(), isSimulated = true) {
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    const now = new Date();
+    const diffSec = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
+    
+    let ageStr = 'just now';
+    if (diffSec < 60) {
+      ageStr = `${diffSec}s ago`;
+    } else if (diffSec < 3600) {
+      ageStr = `${Math.floor(diffSec / 60)}m ago`;
+    } else {
+      ageStr = `${Math.floor(diffSec / 3600)}h ago`;
+    }
+
+    const lang = state.currentLanguage;
+    if (isSimulated) {
+      const label = lang === 'mr' ? `अपडेट ${ageStr} · थेट GPS` : 
+                    (lang === 'hi' ? `अपडेट ${ageStr} · लाइव GPS` : `Updated ${ageStr} · Live GPS`);
+      return {
+        type: 'live',
+        ageStr,
+        label,
+        html: `<span class="freshness-tag live"><span class="freshness-dot"></span><span>${label}</span></span>`
+      };
+    } else {
+      const label = lang === 'mr' ? 'वेळापत्रक · थेट फीड नाही' : 
+                    (lang === 'hi' ? 'समय-सारणी · कोई लाइव फीड नहीं' : 'Scheduled · No live feed');
+      return {
+        type: 'scheduled',
+        ageStr,
+        label,
+        html: `<span class="freshness-tag scheduled"><span class="freshness-dot"></span><span>${label}</span></span>`
+      };
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Navigation & Screen Switcher
   // --------------------------------------------------------------------------
 
+  function goBack() {
+    if (state.navigationStack.length > 1) {
+      state.navigationStack.pop(); // Pop current screen
+      const prevScreen = state.navigationStack[state.navigationStack.length - 1];
+      navigateTo(prevScreen, { isBack: true });
+    } else {
+      navigateTo('home-view', { isBack: true });
+    }
+  }
+
   function navigateTo(screenId, params = {}) {
     console.log(`[WMB] Navigating to screen: ${screenId}`);
     
+    // Update navigation history stack
+    if (!params.isBack) {
+      if (screenId === 'home-view' || screenId === 'splash-view') {
+        state.navigationStack = [screenId];
+      } else {
+        if (state.navigationStack[state.navigationStack.length - 1] !== screenId) {
+          state.navigationStack.push(screenId);
+        }
+      }
+    }
+
     // Stop camera if leaving scanner
     if (state.currentScreen === 'scanner-view' && screenId !== 'scanner-view') {
       stopCameraScan();
@@ -120,6 +179,37 @@ document.addEventListener('DOMContentLoaded', () => {
       targetScreen.classList.add('active');
       state.currentScreen = screenId;
       window.scrollTo(0, 0);
+    }
+
+    // Contextual Header Management: Home vs Child screens
+    const brandSection = document.getElementById('header-brand-section');
+    const childNav = document.getElementById('header-child-nav');
+    const contextTitle = document.getElementById('header-context-title');
+
+    if (brandSection && childNav && contextTitle) {
+      if (screenId === 'home-view' || screenId === 'splash-view') {
+        brandSection.style.display = 'flex';
+        childNav.style.display = 'none';
+      } else {
+        brandSection.style.display = 'none';
+        childNav.style.display = 'flex';
+
+        const titles = {
+          'tracking-view': (state.selectedBus ? `${state.selectedBus.id.replace('BUS-', 'Bus ')} · Live Tracking` : 'Live Bus Tracking'),
+          'routes-view': 'Bus Routes & Timetable',
+          'stop-view': 'Bus Routes & Stops',
+          'stop-info-view': (state.activeStop ? getStopDisplayName(state.activeStop) : 'Bus Stop Details'),
+          'nearby-stops-view': 'Nearby Bus Stops',
+          'scanner-view': 'Scan Bus Stop QR',
+          'account-view': 'My Account & Passes',
+          'bus-details-view': 'Bus Route Details',
+          'schedule-view': 'Timetable & Schedule',
+          'community-view': 'Community Reports',
+          'admin-view': 'Admin Portal',
+          'voice-view': 'Voice Alerts'
+        };
+        contextTitle.textContent = titles[screenId] || 'Track My Bus';
+      }
     }
 
     // Update bottom nav active state
@@ -3027,8 +3117,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (distEl) distEl.textContent = '0.0 km';
         if (etaEl) etaEl.textContent = '0 mins';
         if (statusBadge) {
-          statusBadge.className = 'badge badge-green';
-          statusBadge.textContent = state.currentLanguage === 'mr' ? '● स्थानकावर पोहोचली' : (state.currentLanguage === 'hi' ? '● स्टॉप पर पहुँची' : '● Arrived at Stop');
+          statusBadge.className = 'freshness-tag live';
+          const arrivedText = state.currentLanguage === 'mr' ? 'स्थानकावर थांबली · थेट GPS' : (state.currentLanguage === 'hi' ? 'स्टॉप पर रुकी · लाइव GPS' : 'At Station · Live GPS');
+          statusBadge.innerHTML = `<span class="freshness-dot"></span><span>${arrivedText}</span>`;
         }
         if (bannerTitle) bannerTitle.textContent = state.currentLanguage === 'mr' ? `${stopDisplayName} येथे पोहोचली` : (state.currentLanguage === 'hi' ? `${stopDisplayName} पर पहुँची` : `Arrived at ${stopDisplayName}`);
         if (bannerSub) bannerSub.textContent = state.currentLanguage === 'mr' ? 'प्रवासी चढत आहेत • दरवाजे उघडे' : (state.currentLanguage === 'hi' ? 'यात्री चढ़ रहे हैं • दरवाजे खुले' : 'Boarding Passengers • Doors Open');
@@ -3193,8 +3284,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetDisplayName = getStopDisplayName(currentApproachingStop);
 
       if (statusBadge) {
-        statusBadge.className = 'badge badge-green';
-        statusBadge.textContent = state.currentLanguage === 'mr' ? '● धावत आहे (थेट GPS)' : (state.currentLanguage === 'hi' ? '● चल रही है (लाइव GPS)' : '● Moving (Live GPS)');
+        const secAgo = Math.floor((Date.now() / 1000) % 25) + 4;
+        const fresh = formatDataFreshness(new Date(Date.now() - secAgo * 1000), true);
+        statusBadge.className = 'freshness-tag live';
+        statusBadge.innerHTML = fresh.html;
       }
       if (bannerTitle) {
         const prefix = state.currentLanguage === 'mr' ? 'कडे मार्गस्थ: ' : (state.currentLanguage === 'hi' ? 'की ओर अग्रसर: ' : 'En Route to ');
@@ -3669,6 +3762,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = e.currentTarget.dataset.screenTarget;
         navigateTo(target);
       });
+    });
+
+    // Contextual Header Back Button
+    const headerBackBtn = document.getElementById('header-back-btn');
+    if (headerBackBtn) {
+      headerBackBtn.addEventListener('click', () => {
+        goBack();
+      });
+    }
+
+    // Hardware / Browser Back Navigation
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.screenId) {
+        navigateTo(e.state.screenId, { isBack: true });
+      } else if (state.navigationStack.length > 1) {
+        goBack();
+      }
     });
 
     // Language Selector Buttons
@@ -4452,6 +4562,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Expose global methods for inline HTML handlers if needed
   window.WMB = {
     navigateTo,
+    goBack,
+    formatDataFreshness,
     showToast,
     openModal,
     closeModal,

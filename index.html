@@ -24,13 +24,21 @@
 
     <!-- Top App Header -->
     <header class="app-header">
-      <div class="brand-section" data-screen-target="home-view">
+      <div class="brand-section" id="header-brand-section" data-screen-target="home-view">
         <img src="assets/logo.png" alt="Track My Bus Logo" class="brand-logo-img">
         <div class="brand-divider"></div>
         <div class="brand-title">
           <h1 data-i18n="appName">Track My <span class="brand-accent">Bus</span></h1>
           <span class="brand-tagline" data-i18n="tagline">KNOW BEFORE YOU WAIT.</span>
         </div>
+      </div>
+
+      <div class="header-child-nav" id="header-child-nav" style="display: none;">
+        <button class="header-back-btn" id="header-back-btn" type="button" aria-label="Go back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span data-i18n="backBtn">Back</span>
+        </button>
+        <h2 class="header-context-title" id="header-context-title"></h2>
       </div>
 
       <div class="header-controls">
@@ -51,7 +59,7 @@
     <!-- Low Network Banner (shown dynamically when offline) -->
     <div class="offline-banner" id="offline-banner" style="display: none;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-      <span data-i18n="lowNetNotice">Track My Bus Offline Mode Active</span>
+      <span data-i18n="lowNetNotice">You're offline — showing saved timetable &amp; favorites</span>
     </div>
 
     <!-- Main Dynamic Content Container -->
@@ -532,7 +540,7 @@
               <div class="section-subtitle" id="track-bus-route">Nashik CBS to Yeola Bus Stand</div>
             </div>
             <div class="tracking-header-right">
-              <span class="badge badge-green" id="track-bus-status-badge">● Moving (Live GPS)</span>
+              <span class="freshness-tag live" id="track-bus-status-badge"><span class="freshness-dot"></span><span id="track-bus-status-text">Updated 12s ago · Live GPS</span></span>
               <div class="text-sm text-primary tracking-road-info" id="track-bus-road-info">NH 753J Highway</div>
             </div>
           </div>
@@ -1300,6 +1308,13 @@
         <button class="icon-btn modal-close-trigger">✕</button>
       </div>
 
+      <div class="prototype-notice-callout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <strong>Prototype Feature:</strong> Demo booking only. For official MSRTC tickets &amp; reservations, visit <a href="https://msrtc.maharashtra.gov.in" target="_blank" rel="noopener noreferrer">msrtc.maharashtra.gov.in</a> or use the official MSRTC mobile app.
+        </div>
+      </div>
+
       <div class="mt-3">
         <label class="label-text">From (Origin Station):</label>
         <select id="booking-from-select" class="search-input mt-1 select-input">
@@ -1405,6 +1420,13 @@
         <button class="icon-btn modal-close-trigger">✕</button>
       </div>
 
+      <div class="prototype-notice-callout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <strong>Prototype Pass:</strong> Displayed for demonstration only. Official bus passes must be issued via MSRTC bus stand counters or <a href="https://msrtc.maharashtra.gov.in" target="_blank" rel="noopener noreferrer">msrtc.maharashtra.gov.in</a>.
+        </div>
+      </div>
+
       <div class="mt-3">
         <div class="card" style="background: linear-gradient(135deg, #0284C7, #0369A1); color: white; padding: 16px; border-radius: 16px; box-shadow: 0 10px 25px rgba(2,132,199,0.3);">
           <div class="flex-between">
@@ -1453,6 +1475,13 @@
       <div class="flex-between">
         <h3 class="modal-title">Apply Offline Bus Pass</h3>
         <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="prototype-notice-callout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <strong>Official Guidance:</strong> Information provided is indicative. Verify specific pass counter timings with your local MSRTC depot or visit <a href="https://msrtc.maharashtra.gov.in" target="_blank" rel="noopener noreferrer">msrtc.maharashtra.gov.in</a>.
+        </div>
       </div>
 
       <div class="mt-3" style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
