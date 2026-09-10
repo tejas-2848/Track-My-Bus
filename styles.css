@@ -1096,6 +1096,24 @@ body.dark-mode .splash-hero-card {
 .splash-feat-pill:nth-child(2) { animation-delay: 0.2s; }
 .splash-feat-pill:nth-child(3) { animation-delay: 0.3s; }
 
+#btn-splash-how-to-use {
+  background-color: rgba(19, 86, 197, 0.13);
+  color: var(--primary-blue);
+}
+
+#btn-splash-how-to-use:hover {
+  background-color: rgba(19, 86, 197, 0.20);
+}
+
+body.dark-mode #btn-splash-how-to-use {
+  background-color: rgba(56, 189, 248, 0.20);
+  color: #38BDF8;
+}
+
+body.dark-mode #btn-splash-how-to-use:hover {
+  background-color: rgba(56, 189, 248, 0.28);
+}
+
 /* --------------------------------------------------------------------------
    SCREEN 2: QR SCANNER
    -------------------------------------------------------------------------- */
