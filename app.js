@@ -139,14 +139,18 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (screenId === 'account-view') {
       renderAccountScreen();
     } else if (screenId === 'tracking-view') {
-      if (!params.busId && (!state.hasUserSelectedStop || !state.activeStop)) {
-        showToast('Please scan a bus stop QR or select a nearby stop to view the live map');
-        navigateTo('scanner-view');
-        return;
-      }
       if (params.busId) {
         const found = SMART_ST_DATA.buses.find(b => b.id === params.busId);
         if (found) state.selectedBus = found;
+      }
+      if (!state.selectedBus) {
+        state.selectedBus = SMART_ST_DATA.buses[0];
+      }
+      if (!state.activeStop) {
+        const b = state.selectedBus;
+        state.activeStop = (SMART_ST_DATA.busStops && SMART_ST_DATA.busStops.find(s => s.id === b.targetStopId)) ||
+          (b.intermediateStops && SMART_ST_DATA.busStops && SMART_ST_DATA.busStops.find(s => s.name === b.intermediateStops[0]?.name)) ||
+          (SMART_ST_DATA.busStops && SMART_ST_DATA.busStops[0]);
       }
       renderTrackingScreen();
     } else if (screenId === 'bus-details-view') {
@@ -371,11 +375,11 @@ document.addEventListener('DOMContentLoaded', () => {
               landmark: `Near ${st.name} Highway Corridor`,
               photo: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
               facilities: [
-                { name: 'Passenger Bench', nameMr: 'बैठक बाकडा', icon: '🪑', status: 'Available' },
-                { name: 'Rain Shade', nameMr: 'पक्का शेड', icon: '⛱️', status: 'Available' }
+                { name: 'Passenger Bench', nameMr: 'बैठक बाकडा', icon: 'bench', status: 'Available' },
+                { name: 'Rain Shade', nameMr: 'पक्का शेड', icon: 'shade', status: 'Available' }
               ],
               emergencyContacts: [
-                { role: 'MSRTC Control Room', number: '1800-22-1250', icon: '📞' }
+                { role: 'MSRTC Control Room', number: '1800-22-1250', icon: 'phone' }
               ]
             };
             break;
@@ -770,13 +774,13 @@ document.addEventListener('DOMContentLoaded', () => {
               landmark: `Along ${b.routeName} Corridor (NH Highway)`,
               photo: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
               facilities: [
-                { name: 'Passenger Bench', nameMr: 'बैठक बाकडा', icon: '🪑', status: 'Available' },
-                { name: 'Rain Shade', nameMr: 'पक्का शेड', icon: '⛱️', status: 'Available' },
-                { name: 'Solar Lighting', nameMr: 'सौर पथदिवे', icon: '💡', status: 'Functional' }
+                { name: 'Passenger Bench', nameMr: 'बैठक बाकडा', icon: 'bench', status: 'Available' },
+                { name: 'Rain Shade', nameMr: 'पक्का शेड', icon: 'shade', status: 'Available' },
+                { name: 'Solar Lighting', nameMr: 'सौर पथदिवे', icon: 'light', status: 'Functional' }
               ],
               emergencyContacts: [
-                { role: 'MSRTC Control Room', number: '1800-22-1250', icon: '📞' },
-                { role: 'Police Station', number: '112', icon: '🚓' }
+                { role: 'MSRTC Control Room', number: '1800-22-1250', icon: 'phone' },
+                { role: 'Police Station', number: '112', icon: 'police' }
               ]
             };
             SMART_ST_DATA.busStops.push(synthesizedStop);
@@ -1182,7 +1186,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (displayStops.length === 0) {
       container.innerHTML = `
         <div class="card nearby-empty-card">
-          <div class="nearby-empty-icon">🔍</div>
+          <div class="nearby-empty-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
           <h4 class="nearby-empty-title">No bus stops found</h4>
           <p class="nearby-empty-text">
             ${q ? `No stops matching "<strong>${q}</strong>" within ${rad === 'all' ? 'the active network' : rad + ' km'}.` : 'No stops found within selected radius.'}
@@ -1415,7 +1424,9 @@ document.addEventListener('DOMContentLoaded', () => {
       item.className = 'home-favorite-item';
       item.innerHTML = `
         <div class="home-fav-left">
-          <span class="home-fav-icon">⭐</span>
+          <span class="home-fav-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </span>
           <div>
             <div class="home-fav-name">${getStopDisplayName(stop)}</div>
             <div class="home-fav-sub">${stop.taluka || 'Nashik'} • ${stop.qrCode || 'MSRTC'}</div>
@@ -1459,7 +1470,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.currentUser.favorites = [...state.favorites];
         try { localStorage.setItem('wmb_currentUser', JSON.stringify(state.currentUser)); } catch(e) {}
       }
-      showToast('⭐ Added to Favorite Stops!');
+      showToast('Added to Favorite Stops');
       renderHomeFavoritesList();
       closeModal('add-favorite-modal');
     } else {
@@ -1494,7 +1505,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (delayedBuses.length === 0) {
       card.classList.remove('has-delay');
-      if (iconEl) iconEl.textContent = '🟢';
+      if (iconEl) iconEl.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--apple-green);"></span>';
       if (badgeEl) {
         badgeEl.className = 'badge badge-green';
         badgeEl.textContent = 'Normal';
@@ -1503,7 +1514,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (routesListEl) routesListEl.style.display = 'none';
     } else if (delayedBuses.length <= 4) {
       card.classList.add('has-delay');
-      if (iconEl) iconEl.textContent = '🟠';
+      if (iconEl) iconEl.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--apple-orange);"></span>';
       if (badgeEl) {
         badgeEl.className = 'badge badge-orange';
         badgeEl.textContent = 'Minor Delays';
@@ -1512,11 +1523,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (detailEl) detailEl.textContent = `${affectedRoutes.length} corridor(s) experiencing traffic delays (Avg delay ~${avgDelay} min).`;
       if (routesListEl) {
         routesListEl.style.display = 'flex';
-        routesListEl.innerHTML = affectedRoutes.map(r => `<span style="color:var(--status-orange); font-size:11px;">⚠️ ${r}</span>`).join('');
+        routesListEl.innerHTML = affectedRoutes.map(r => `<span style="color:var(--status-orange); font-size:11px; display:inline-flex; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${r}</span>`).join('');
       }
     } else {
       card.classList.add('has-delay');
-      if (iconEl) iconEl.textContent = '🔴';
+      if (iconEl) iconEl.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--apple-red);"></span>';
       if (badgeEl) {
         badgeEl.className = 'badge badge-orange';
         badgeEl.style.background = 'rgba(239, 68, 68, 0.15)';
@@ -1526,7 +1537,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (detailEl) detailEl.textContent = 'Multiple corridors experiencing weather & highway delays. Check trip timelines.';
       if (routesListEl) {
         routesListEl.style.display = 'flex';
-        routesListEl.innerHTML = affectedRoutes.slice(0, 3).map(r => `<span style="color:#EF4444; font-size:11px;">⚠️ ${r}</span>`).join('');
+        routesListEl.innerHTML = affectedRoutes.slice(0, 3).map(r => `<span style="color:#EF4444; font-size:11px; display:inline-flex; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${r}</span>`).join('');
       }
     }
   }
@@ -1553,7 +1564,10 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="home-report-mini-meta">
           <span>By ${rep.reporter}</span>
-          <span style="color:var(--status-green); font-weight:700;">👍 ${rep.votes} verified</span>
+          <span style="color:var(--apple-green); font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            ${rep.votes} verified
+          </span>
         </div>
       `;
       container.appendChild(item);
@@ -1736,7 +1750,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filteredRoutes.length === 0) {
       container.innerHTML = `
         <div class="card text-center p-4">
-          <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
+          <div style="margin-bottom: 8px; color: var(--apple-label-tertiary);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
           <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">No routes found</div>
           <div class="text-sm text-secondary">
             No MSRTC bus routes match "${query}". Try searching for Nashik, Shirdi, Pune, Yeola, or Niphad.
@@ -1811,7 +1829,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <span>ETA: <strong style="color:var(--status-green);">${b.etaMinutes} min</strong></span>
             </div>
             <button type="button" class="route-bus-track-action-btn" data-bus-id="${b.id}">
-              🗺️ Track Bus Live
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              <span>Track on Live Map</span>
             </button>
           </div>
         `;
@@ -2089,7 +2108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const safeQ = cleanQ.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         dropdown.innerHTML = `
           <div class="stop-search-empty">
-            <div>🔍 No bus stops found matching "<strong>${safeQ}</strong>"</div>
+            <div>No bus stops found matching "<strong>${safeQ}</strong>"</div>
             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
               Try searching by town or village name (e.g. Niphad, Yeola, Chandori, Saikheda, Sinnar)
             </div>
@@ -2104,7 +2123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let html = '';
       if (!cleanQ) {
-        html += `<div class="stop-search-header-label">⭐ Popular Bus Stations & Hubs</div>`;
+        html += `<div class="stop-search-header-label">Popular Bus Stations & Hubs</div>`;
       }
 
       matched.forEach(st => {
@@ -2133,10 +2152,14 @@ document.addEventListener('DOMContentLoaded', () => {
           ? (st.taluka ? `${st.taluka}, ${st.district || 'MSRTC'}` : 'Major MSRTC Station')
           : (st.route || 'Highway Corridor Stop');
 
+        const stopIconSvg = st.isMajor
+          ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h4"/></svg>'
+          : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/></svg>';
+
         html += `
           <div class="stop-search-item ${isCurrentActive ? 'is-active-stop' : ''}" data-stop-id="${st.id}">
             <div class="stop-search-item-left">
-              <span class="stop-search-item-icon">${st.isMajor ? '🚏' : '📍'}</span>
+              <span class="stop-search-item-icon">${stopIconSvg}</span>
               <div class="stop-search-item-text">
                 <div class="stop-search-item-title">
                   <span>${dispName}</span>
@@ -2148,7 +2171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="stop-search-item-right">
               ${distText ? `<span class="stop-search-item-dist">${distText}</span>` : ''}
-              <span class="stop-search-select-badge">Switch ➔</span>
+              <span class="stop-search-select-badge">Switch</span>
             </div>
           </div>
         `;
@@ -2253,25 +2276,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAP_TILE_LAYERS = [
     {
       name: 'OpenStreetMap Standard',
-      icon: '🚏',
       url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       options: { maxZoom: 19, attribution: '© OpenStreetMap contributors • Track My Bus' }
     },
     {
       name: 'Clean Street Map (Esri)',
-      icon: '🗺️',
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
       options: { maxZoom: 19, attribution: 'Tiles © Esri' }
     },
     {
       name: 'Humanitarian Transit',
-      icon: '🚌',
       url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
       options: { maxZoom: 19, subdomains: ['a', 'b'], attribution: '© OpenStreetMap contributors' }
     },
     {
       name: 'Satellite Aerial View',
-      icon: '🛰️',
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       options: { maxZoom: 18, attribution: 'Tiles © Esri' }
     }
@@ -2414,7 +2433,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="bus-map-popup-card">
         <div class="popup-bus-header">
           <div class="flex-between gap-2" style="margin-bottom: 4px;">
-            <span class="badge" style="background:${bus.badgeColor}; color:#FFFFFF; font-size:11px; padding: 4px 8px;">🚌 ${bus.number}</span>
+            <span class="badge" style="background:${bus.badgeColor}; color:#FFFFFF; font-size:11px; padding: 4px 8px;">${bus.number}</span>
             <span class="badge badge-green" style="font-size:10px;">● ${bus.status}</span>
           </div>
           <div style="font-weight: 800; font-size: 13px; color: var(--text-main); margin-top: 2px;">${bus.type}</div>
@@ -2526,7 +2545,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="trip-time-col">
           <span class="trip-time-text">${timeText}</span>
-          ${(isCurrent || isUpcoming) ? `<button class="btn-stop-alert-bell" data-stop="${st.name}" title="Set reminder for ${displayName}">🔔</button>` : ''}
+          ${(isCurrent || isUpcoming) ? `<button class="btn-stop-alert-bell" data-stop="${st.name}" title="Set reminder for ${displayName}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>` : ''}
         </div>
       `;
 
@@ -2584,7 +2603,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderTrackingScreen() {
+    if (!state.selectedBus) {
+      state.selectedBus = SMART_ST_DATA.buses[0];
+    }
     const bus = state.selectedBus;
+    if (!state.activeStop) {
+      state.activeStop = (SMART_ST_DATA.busStops && SMART_ST_DATA.busStops.find(s => s.id === bus.targetStopId)) ||
+        (bus.intermediateStops && SMART_ST_DATA.busStops && SMART_ST_DATA.busStops.find(s => s.name === bus.intermediateStops[0]?.name)) ||
+        (SMART_ST_DATA.busStops && SMART_ST_DATA.busStops[0]);
+    }
     const stop = state.activeStop;
     
     if (!bus || !stop) return; // Safely abort if missing
@@ -3311,7 +3338,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bus.intermediateStops.forEach(st => {
       const isTarget = st.isCurrentTarget;
       const displayName = getStopDisplayName(st);
-      const targetLabel = isTarget ? (state.currentLanguage === 'mr' ? '📍 (लक्षित थांबा)' : (state.currentLanguage === 'hi' ? '📍 (लक्षित स्टॉप)' : '📍 (Target Stop)')) : '';
+      const targetLabel = isTarget ? (state.currentLanguage === 'mr' ? '(लक्षित थांबा)' : (state.currentLanguage === 'hi' ? '(लक्षित स्टॉप)' : '(Target Stop)')) : '';
       const html = `
         <div class="stop-timeline-row ${isTarget ? 'active' : ''}">
           <div class="stop-dot"></div>
@@ -3329,6 +3356,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // SCREEN 6: BUS STOP INFO & FACILITIES
   // --------------------------------------------------------------------------
 
+  function getAmenitySvg(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('bench') || n.includes('seat') || n.includes('बाकडा')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18v3M20 18v3M2 11h20M4 18h16M4 11V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5"/></svg>`;
+    }
+    if (n.includes('shade') || n.includes('shelter') || n.includes('शेड')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`;
+    }
+    if (n.includes('light') || n.includes('solar') || n.includes('पथदिवे')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>`;
+    }
+    if (n.includes('water') || n.includes('पाणी')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`;
+    }
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+  }
+
+  function getEmergencyContactSvg(role) {
+    const r = (role || '').toLowerCase();
+    if (r.includes('police')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+    }
+    if (r.includes('ambulance') || r.includes('hospital')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/></svg>`;
+    }
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+  }
+
   function renderStopInfoScreen() {
     const stop = state.activeStop;
     document.getElementById('stop-info-title').textContent = getStopDisplayName(stop);
@@ -3342,7 +3397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const facName = (state.currentLanguage === 'mr' && fac.nameMr) ? fac.nameMr : fac.name;
         const html = `
           <div class="amenity-card">
-            <div class="amenity-icon">${fac.icon}</div>
+            <div class="amenity-icon">${getAmenitySvg(fac.name)}</div>
             <div>
               <div style="font-weight:700; font-size:13px;">${facName}</div>
               <div style="font-size:11px; color:var(--text-secondary);">${fac.status}</div>
@@ -3360,9 +3415,12 @@ document.addEventListener('DOMContentLoaded', () => {
       stop.emergencyContacts.forEach(c => {
         const html = `
           <div class="emergency-row">
-            <div>
-              <div style="font-weight:700; font-size:14px;">${c.icon} ${c.role}</div>
-              <div style="font-size:12px; color:var(--primary-blue); font-weight:700;">${c.number}</div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="color: var(--apple-tint);">${getEmergencyContactSvg(c.role)}</div>
+              <div>
+                <div style="font-weight:700; font-size:14px;">${c.role}</div>
+                <div style="font-size:12px; color:var(--primary-blue); font-weight:700;">${c.number}</div>
+              </div>
             </div>
             <a href="tel:${c.number}" class="btn btn-sm btn-primary">Call Now</a>
           </div>
@@ -3476,7 +3534,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="flex-between mt-2">
             <span class="badge badge-green">${rep.statusBadge}</span>
             <button class="btn btn-sm btn-secondary btn-upvote-report" data-id="${rep.id}">
-              👍 Upvote (${rep.votes})
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Verify (${rep.votes})</span>
             </button>
           </div>
         </div>
@@ -3980,7 +4039,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="text-sm">${st.taluka || 'Nashik'} • ${st.qrCode || 'MSRTC'}</div>
           </div>
           <button class="btn btn-sm ${isFav ? 'btn-secondary' : 'btn-outline-primary'} btn-toggle-fav-pick" data-stop-id="${st.id}">
-            ${isFav ? '⭐ Starred' : '+ Add'}
+            ${isFav ? 'Starred' : '+ Add'}
           </button>
         `;
 
@@ -3994,7 +4053,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               addFavoriteStop(st.id);
               btn.className = 'btn btn-sm btn-secondary';
-              btn.textContent = '⭐ Starred';
+              btn.textContent = 'Starred';
             }
           });
         }
@@ -4145,7 +4204,7 @@ document.addEventListener('DOMContentLoaded', () => {
           item.className = 'home-search-item';
           item.innerHTML = `
             <div>
-              <div style="font-weight: 700; font-size: 13px;">🚏 ${getStopDisplayName(stop)}</div>
+              <div style="font-weight: 700; font-size: 13px;">${getStopDisplayName(stop)}</div>
               <div class="text-xs" style="color: var(--text-secondary);">${stop.taluka || 'Nashik'} • ${stop.qrCode || 'MSRTC'}</div>
             </div>
             <span class="badge badge-blue">View Live</span>
@@ -4164,7 +4223,7 @@ document.addEventListener('DOMContentLoaded', () => {
           item.className = 'home-search-item';
           item.innerHTML = `
             <div>
-              <div style="font-weight: 700; font-size: 13px;">🚌 ${bus.number} (${bus.type})</div>
+              <div style="font-weight: 700; font-size: 13px;">${bus.number} (${bus.type})</div>
               <div class="text-xs" style="color: var(--text-secondary);">${bus.routeName} • ETA: ${bus.etaMinutes}m</div>
             </div>
             <span class="badge badge-green">Track GPS</span>
