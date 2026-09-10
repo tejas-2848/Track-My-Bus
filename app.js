@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     activeStop: null,
     hasUserSelectedStop: false,
     selectedBus: null,
+    userCoords: null,
+    isGpsActive: false,
     currentUser: (() => {
       try { return JSON.parse(localStorage.getItem('wmb_currentUser')) || null; } catch(e) { return null; }
     })(),
@@ -137,14 +139,18 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (screenId === 'account-view') {
       renderAccountScreen();
     } else if (screenId === 'tracking-view') {
-      if (!params.busId && (!state.hasUserSelectedStop || !state.activeStop)) {
-        showToast('📷 Please scan a bus stop QR or select a nearby stop to view the live map');
-        navigateTo('scanner-view');
-        return;
-      }
       if (params.busId) {
         const found = SMART_ST_DATA.buses.find(b => b.id === params.busId);
         if (found) state.selectedBus = found;
+      }
+      if (!state.selectedBus) {
+        state.selectedBus = SMART_ST_DATA.buses[0];
+      }
+      if (!state.activeStop) {
+        const b = state.selectedBus;
+        state.activeStop = (SMART_ST_DATA.busStops && SMART_ST_DATA.busStops.find(s => s.id === b.targetStopId)) ||
+          (b.intermediateStops && SMART_ST_DATA.busStops && SMART_ST_DATA.busStops.find(s => s.name === b.intermediateStops[0]?.name)) ||
+          (SMART_ST_DATA.busStops && SMART_ST_DATA.busStops[0]);
       }
       renderTrackingScreen();
     } else if (screenId === 'bus-details-view') {
@@ -166,6 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAdminDashboardScreen();
     } else if (screenId === 'voice-view') {
       renderVoiceViewScreen();
+    } else if (screenId === 'nearby-stops-view') {
+      renderNearbyStopsScreen();
     }
   }
 
@@ -181,9 +189,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const key = el.dataset.i18n;
       if (key === 'appName') {
         const brandMap = {
-          en: 'Where\'s My <span class="brand-accent">Bus?</span>',
-          mr: 'माझी बस <span class="brand-accent">कुठे आहे?</span>',
-          hi: 'मेरी बस <span class="brand-accent">कहाँ है?</span>'
+          en: 'Track My <span class="brand-accent">Bus</span>',
+          mr: 'माझी बस <span class="brand-accent">ट्रॅक करा</span>',
+          hi: 'मेरी बस <span class="brand-accent">ट्रैक करें</span>'
         };
         el.innerHTML = brandMap[langCode] || dict[key];
         return;
@@ -271,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     utterance.pitch = state.audioPitch;
 
     utterance.onstart = () => {
-      showToast('🔊 Playing Voice Announcement...');
+      showToast('Playing Voice Announcement...');
     };
 
     state.speechSynth.speak(utterance);
@@ -367,11 +375,11 @@ document.addEventListener('DOMContentLoaded', () => {
               landmark: `Near ${st.name} Highway Corridor`,
               photo: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
               facilities: [
-                { name: 'Passenger Bench', nameMr: 'बैठक बाकडा', icon: '🪑', status: 'Available' },
-                { name: 'Rain Shade', nameMr: 'पक्का शेड', icon: '⛱️', status: 'Available' }
+                { name: 'Passenger Bench', nameMr: 'बैठक बाकडा', icon: 'bench', status: 'Available' },
+                { name: 'Rain Shade', nameMr: 'पक्का शेड', icon: 'shade', status: 'Available' }
               ],
               emergencyContacts: [
-                { role: 'MSRTC Control Room', number: '1800-22-1250', icon: '📞' }
+                { role: 'MSRTC Control Room', number: '1800-22-1250', icon: 'phone' }
               ]
             };
             break;
@@ -385,23 +393,11 @@ document.addEventListener('DOMContentLoaded', () => {
       matchedStop = SMART_ST_DATA.busStops[0];
     }
 
-    state.activeStop = matchedStop;
-    state.hasUserSelectedStop = true;
-    state.lastViewedStopId = matchedStop.id;
-    try { localStorage.setItem('wmb_last_viewed_stop', matchedStop.id); } catch(e) {}
-
-    // Auto-select bus servicing this stop
-    if (!state.selectedBus || !state.selectedBus.intermediateStops || !state.selectedBus.intermediateStops.some(s => s.name.toLowerCase() === matchedStop.name.toLowerCase())) {
-      const found = SMART_ST_DATA.buses.find(b => b.intermediateStops && b.intermediateStops.some(s => s.name.toLowerCase() === matchedStop.name.toLowerCase()));
-      if (found) state.selectedBus = found;
-      else if (!state.selectedBus) state.selectedBus = SMART_ST_DATA.buses[0];
-    }
-
     setTimeout(() => {
       if (scanFrame) scanFrame.classList.remove('scan-success');
       state.isQrProcessing = false;
-      showToast(`🎉 QR Code Scanned: ${getStopDisplayName(matchedStop)}`);
-      navigateTo('tracking-view');
+      showToast(`QR Code Scanned: ${getStopDisplayName(matchedStop)}`);
+      openLiveMapForStop(matchedStop);
     }, 400);
   }
 
@@ -532,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       updateTorchUI();
-      showToast(state.isTorchOn ? '🔦 Torch turned ON' : '🔦 Torch turned OFF');
+      showToast(state.isTorchOn ? 'Torch turned ON' : 'Torch turned OFF');
     } catch (err) {
       console.warn('[WMB] Torch toggle failed:', err);
       state.isTorchOn = false;
@@ -554,23 +550,188 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function simulateQRScan(stopId) {
-    const targetStop = resolveStopObject(stopId) || SMART_ST_DATA.busStops.find(s => s.id === stopId) || SMART_ST_DATA.busStops[0];
+  // --------------------------------------------------------------------------
+  // UPCOMING BUS SELECTOR & LIVE MAP CONNECTOR
+  // --------------------------------------------------------------------------
+
+  function findBestUpcomingBusForStop(stop) {
+    if (!stop) return null;
+    const stopName = (stop.name || '').toLowerCase();
+    const stopMr = (stop.nameMr || '').trim();
+
+    const candidates = [];
+
+    SMART_ST_DATA.buses.forEach(b => {
+      if (!b.intermediateStops) return;
+
+      let stopIdx = b.intermediateStops.findIndex(s => {
+        if (s.name && s.name.toLowerCase() === stopName) return true;
+        if (s.nameMr && stopMr && s.nameMr.trim() === stopMr) return true;
+        if (s.lat && s.lng && stop.latitude && stop.longitude) {
+          return calculateDistanceKm(s.lat, s.lng, stop.latitude, stop.longitude) < 0.8;
+        }
+        return false;
+      });
+
+      if (stopIdx === -1) return;
+
+      let targetIdx = b.intermediateStops.findIndex(s => s.isCurrentTarget);
+      if (targetIdx === -1) {
+        targetIdx = b.intermediateStops.findIndex(s => s.status !== 'Departed');
+      }
+
+      const isPassed = (targetIdx === -1) || (targetIdx > stopIdx);
+
+      // Realistic ETA in minutes to this stop
+      let etaMins = 0;
+      let distKm = 0;
+      if (stop.latitude && stop.longitude && b.currentLat && b.currentLng) {
+        distKm = calculateDistanceKm(b.currentLat, b.currentLng, stop.latitude, stop.longitude);
+        const stopsBetween = Math.max(0, stopIdx - Math.max(0, targetIdx));
+        etaMins = Math.max(2, Math.round((distKm / 38) * 60 + stopsBetween * 2 + (b.delayMinutes || 0)));
+      } else {
+        etaMins = b.etaMinutes || 15;
+      }
+
+      candidates.push({
+        bus: b,
+        stopIdx,
+        targetIdx,
+        isPassed,
+        isUpcoming: !isPassed,
+        etaMins,
+        distKm
+      });
+    });
+
+    if (candidates.length === 0) return null;
+
+    const upcoming = candidates.filter(c => c.isUpcoming);
+
+    if (upcoming.length > 0) {
+      upcoming.sort((a, b) => a.etaMins - b.etaMins);
+      return {
+        bus: upcoming[0].bus,
+        etaMinutes: upcoming[0].etaMins,
+        distanceKm: upcoming[0].distKm,
+        isPassed: false,
+        upcomingCandidates: upcoming.map(u => u.bus)
+      };
+    }
+
+    candidates.sort((a, b) => a.targetIdx - b.targetIdx);
+    return {
+      bus: candidates[0].bus,
+      etaMinutes: candidates[0].etaMins,
+      distanceKm: candidates[0].distKm,
+      isPassed: true,
+      upcomingCandidates: []
+    };
+  }
+
+  function openLiveMapForStop(stop) {
+    const targetStop = resolveStopObject(stop.id || stop.name) || stop;
     state.activeStop = targetStop;
     state.hasUserSelectedStop = true;
     state.lastViewedStopId = targetStop.id;
     try { localStorage.setItem('wmb_last_viewed_stop', targetStop.id); } catch(e) {}
-    
-    // Auto-select bus servicing this stop
-    if (!state.selectedBus || !state.selectedBus.intermediateStops || !state.selectedBus.intermediateStops.some(s => s.name.toLowerCase() === targetStop.name.toLowerCase())) {
-      const found = SMART_ST_DATA.buses.find(b => b.intermediateStops && b.intermediateStops.some(s => s.name.toLowerCase() === targetStop.name.toLowerCase()));
-      if (found) state.selectedBus = found;
-      else if (!state.selectedBus) state.selectedBus = SMART_ST_DATA.buses[0];
+
+    // Automatically select the next UPCOMING bus for this stop
+    const upcomingResult = findBestUpcomingBusForStop(targetStop);
+    if (upcomingResult && upcomingResult.bus) {
+      state.selectedBus = upcomingResult.bus;
+      if (!upcomingResult.isPassed) {
+        showToast(`${getStopDisplayName(targetStop)}: Next bus arriving in ${upcomingResult.etaMinutes}m`);
+      } else {
+        showToast(`Connected to ${getStopDisplayName(targetStop)}`);
+      }
+    } else {
+      state.selectedBus = SMART_ST_DATA.buses[0];
+      showToast(`Connected to ${getStopDisplayName(targetStop)}`);
     }
 
+    navigateTo('tracking-view', { busId: state.selectedBus.id });
+  }
+
+  function requestUserGpsLocation(onSuccess, onError) {
+    if (!navigator.geolocation) {
+      if (onError) onError(new Error('Geolocation not supported'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        state.userCoords = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        };
+        state.isGpsActive = true;
+        if (onSuccess) onSuccess(pos);
+      },
+      err => {
+        state.isGpsActive = false;
+        if (onError) onError(err);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  function getSortedNearbyStops(limit = 6) {
+    let userLat = state.userCoords ? state.userCoords.lat : null;
+    let userLng = state.userCoords ? state.userCoords.lng : null;
+
+    if (!userLat || !userLng) {
+      if (state.activeStop && state.activeStop.latitude && state.activeStop.longitude) {
+        userLat = state.activeStop.latitude;
+        userLng = state.activeStop.longitude;
+      } else {
+        userLat = 19.9975; // Nashik CBS
+        userLng = 73.7898;
+      }
+    }
+
+    const candidatesMap = new Map();
+    SMART_ST_DATA.busStops.forEach(s => candidatesMap.set(s.name, s));
+
+    if (SMART_ST_DATA.buses) {
+      SMART_ST_DATA.buses.forEach(b => {
+        if (b.intermediateStops) {
+          b.intermediateStops.forEach(st => {
+            if (st.lat && st.lng && !candidatesMap.has(st.name)) {
+              candidatesMap.set(st.name, {
+                id: `ST-${st.roadIndex || 1}`,
+                name: st.name,
+                nameMr: st.nameMr || st.name,
+                latitude: st.lat,
+                longitude: st.lng,
+                landmark: b.routeName
+              });
+            }
+          });
+        }
+      });
+    }
+
+    const stopList = Array.from(candidatesMap.values()).map(st => {
+      const d = calculateDistanceKm(userLat, userLng, st.latitude, st.longitude);
+      const upcomingResult = findBestUpcomingBusForStop(st);
+      return {
+        stop: st,
+        distKm: d,
+        upcomingBus: upcomingResult ? upcomingResult.bus : null,
+        etaMinutes: upcomingResult ? upcomingResult.etaMinutes : null,
+        isUpcoming: upcomingResult ? !upcomingResult.isPassed : false
+      };
+    });
+
+    stopList.sort((a, b) => a.distKm - b.distKm);
+    return stopList.slice(0, limit);
+  }
+
+  function simulateQRScan(stopId) {
+    const targetStop = resolveStopObject(stopId) || SMART_ST_DATA.busStops.find(s => s.id === stopId) || SMART_ST_DATA.busStops[0];
     playScanSuccessBeep();
-    showToast(`QR Scanned! Connected to ${getStopDisplayName(targetStop)}`);
-    navigateTo('tracking-view');
+    openLiveMapForStop(targetStop);
   }
 
   // --------------------------------------------------------------------------
@@ -613,13 +774,13 @@ document.addEventListener('DOMContentLoaded', () => {
               landmark: `Along ${b.routeName} Corridor (NH Highway)`,
               photo: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
               facilities: [
-                { name: 'Passenger Bench', nameMr: 'बैठक बाकडा', icon: '🪑', status: 'Available' },
-                { name: 'Rain Shade', nameMr: 'पक्का शेड', icon: '⛱️', status: 'Available' },
-                { name: 'Solar Lighting', nameMr: 'सौर पथदिवे', icon: '💡', status: 'Functional' }
+                { name: 'Passenger Bench', nameMr: 'बैठक बाकडा', icon: 'bench', status: 'Available' },
+                { name: 'Rain Shade', nameMr: 'पक्का शेड', icon: 'shade', status: 'Available' },
+                { name: 'Solar Lighting', nameMr: 'सौर पथदिवे', icon: 'light', status: 'Functional' }
               ],
               emergencyContacts: [
-                { role: 'MSRTC Control Room', number: '1800-22-1250', icon: '📞' },
-                { role: 'Police Station', number: '112', icon: '🚓' }
+                { role: 'MSRTC Control Room', number: '1800-22-1250', icon: 'phone' },
+                { role: 'Police Station', number: '112', icon: 'police' }
               ]
             };
             SMART_ST_DATA.busStops.push(synthesizedStop);
@@ -636,85 +797,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('nearby-stops-container');
     if (!container) return;
 
-    // Use passed coordinates, user location if available, active stop, or default Niphad
-    let userLat = customLat;
-    let userLng = customLng;
-    if (!userLat || !userLng) {
-      if (state.activeStop && state.activeStop.latitude && state.activeStop.longitude) {
-        userLat = state.activeStop.latitude;
-        userLng = state.activeStop.longitude;
-      } else {
-        userLat = 19.9975; // Central Bus Stand, Nashik
-        userLng = 73.7898;
-      }
+    if (customLat && customLng) {
+      state.userCoords = { lat: customLat, lng: customLng, accuracy: 15 };
+      state.isGpsActive = true;
     }
 
-    // Collect all candidate stops with unique names
-    const candidatesMap = new Map();
-    SMART_ST_DATA.busStops.forEach(s => candidatesMap.set(s.name, s));
-
-    // Also include corridor stops with valid lat/lng
-    if (SMART_ST_DATA.buses) {
-      SMART_ST_DATA.buses.forEach(b => {
-        if (b.intermediateStops) {
-          b.intermediateStops.forEach(st => {
-            if (st.lat && st.lng && !candidatesMap.has(st.name)) {
-              candidatesMap.set(st.name, {
-                id: `ST-${st.roadIndex || 1}`,
-                name: st.name,
-                nameMr: st.nameMr || st.name,
-                latitude: st.lat,
-                longitude: st.lng,
-                landmark: b.routeName
-              });
-            }
-          });
-        }
-      });
-    }
-
-    const stopList = Array.from(candidatesMap.values()).map(st => {
-      const d = calculateDistanceKm(userLat, userLng, st.latitude, st.longitude);
-      return { stop: st, distKm: d };
-    });
-
-    // Sort by distance ascending
-    stopList.sort((a, b) => a.distKm - b.distKm);
-
-    // Pick top 4 closest stops
-    const nearby = stopList.slice(0, 4);
+    const nearby = getSortedNearbyStops(6);
 
     container.innerHTML = '';
     nearby.forEach(item => {
       const st = item.stop;
       const dKm = item.distKm;
       const distStr = dKm < 1 ? `${Math.round(dKm * 1000)} m` : `${dKm.toFixed(1)} km`;
-      const walkMins = Math.max(1, Math.round(dKm * 12)); // ~5 km/h walking speed
+      const walkMins = Math.max(1, Math.round(dKm * 12));
+      const upBus = item.upcomingBus;
+
+      let upBusBadge = '';
+      if (upBus && item.isUpcoming) {
+        upBusBadge = `<div class="text-xs text-green font-bold mt-1" style="display:inline-flex; align-items:center; gap:4px;"><span class="pulse-dot"></span> Next: ${upBus.number} (${item.etaMinutes}m)</div>`;
+      }
 
       const card = document.createElement('div');
       card.className = 'nearby-stop-card';
       card.setAttribute('data-stop-id', st.id || st.name);
 
       card.innerHTML = `
-        <div class="nearby-stop-icon">🚏</div>
-        <div class="nearby-stop-info">
+        <div class="nearby-stop-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        </div>
+        <div class="nearby-stop-info" style="flex: 1;">
           <div class="nearby-stop-name">${getStopDisplayName(st)}</div>
           <div class="nearby-stop-meta">
-            <span class="nearby-dist-pill">📍 ${distStr} away</span>
-            <span class="nearby-walk-pill">🚶 ~${walkMins} min walk</span>
+            <span class="nearby-dist-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> ${distStr} away</span>
+            <span class="nearby-walk-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~${walkMins} min walk</span>
           </div>
+          ${upBusBadge}
         </div>
         <button class="btn btn-sm btn-primary btn-select-nearby-stop" type="button" style="padding: 6px 12px; font-size: 12px; font-weight: 700;">
-          Select
+          Live Map ➔
         </button>
       `;
 
       card.addEventListener('click', () => {
-        const resolved = resolveStopObject(st.id || st.name) || st;
-        state.activeStop = resolved;
-        state.hasUserSelectedStop = true;
-        showToast(`🎉 Connected to ${resolved.name}`);
-        openLiveMapForStop(resolved);
+        openLiveMapForStop(st);
       });
 
       container.appendChild(card);
@@ -722,7 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setupNearbyStopsFeature() {
-    // Locate Me GPS Button
+    // Locate Me GPS Button in Scanner
     const btnLocate = document.getElementById('btn-detect-gps-stops');
     const statusEl = document.getElementById('nearby-gps-status');
 
@@ -731,27 +856,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusEl) statusEl.textContent = '● Locating with GPS...';
         showToast('Acquiring live GPS coordinates...');
 
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            pos => {
-              const lat = pos.coords.latitude;
-              const lng = pos.coords.longitude;
-              if (statusEl) statusEl.textContent = `● GPS Located (±${Math.round(pos.coords.accuracy)}m)`;
-              renderNearbyBusStops(lat, lng);
-              showToast('Updated nearby stops based on your location!');
-            },
-            err => {
-              console.warn('[WMB] Geolocation error:', err);
-              if (statusEl) statusEl.textContent = '● Regional Transit Network';
-              renderNearbyBusStops();
-              showToast('Location permission denied or unavailable. Showing regional stops.');
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-          );
-        } else {
-          if (statusEl) statusEl.textContent = '● Regional Transit Network';
-          renderNearbyBusStops();
-        }
+        requestUserGpsLocation(
+          pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            if (statusEl) statusEl.textContent = `● GPS Located (±${Math.round(pos.coords.accuracy)}m)`;
+            renderNearbyBusStops(lat, lng);
+            renderHomeNearbyStopCard();
+            renderPortalNearbyStopsList();
+            showToast('Updated nearby stops based on your location!');
+          },
+          err => {
+            console.warn('[WMB] Geolocation error:', err);
+            if (statusEl) statusEl.textContent = '● Regional Transit Network';
+            renderNearbyBusStops();
+            renderHomeNearbyStopCard();
+            showToast('Location permission denied or unavailable. Showing regional stops.');
+          }
+        );
       });
     }
   }
@@ -778,6 +900,443 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHomeFavoritesList();
     renderHomeServiceStatus();
     renderHomeReportsPreview();
+
+    // 4. Dynamic Live Nearby Bus Stop Card
+    renderHomeNearbyStopCard();
+  }
+
+  function renderHomeNearbyStopCard() {
+    const card = document.getElementById('home-nearby-card');
+    if (!card) return;
+
+    // Get closest stop from user's GPS position
+    const sortedStops = getSortedNearbyStops(1);
+    if (sortedStops.length === 0) return;
+
+    const closest = sortedStops[0];
+    const st = closest.stop;
+    const distKm = closest.distKm;
+    const distStr = distKm < 1 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`;
+    const upcomingBus = closest.upcomingBus;
+
+    const nameEl = document.getElementById('home-nearby-stop-name');
+    const distEl = document.getElementById('home-nearby-stop-dist');
+    const busTypeEl = document.getElementById('home-nearby-bus-type');
+    const busDestEl = document.getElementById('home-nearby-bus-dest');
+    const etaEl = document.getElementById('home-nearby-eta');
+    const busBox = document.getElementById('home-nearby-bus-box');
+
+    if (nameEl) nameEl.textContent = getStopDisplayName(st);
+    if (distEl) distEl.textContent = state.isGpsActive ? `${distStr} • Live GPS` : distStr;
+
+    if (upcomingBus) {
+      if (busTypeEl) busTypeEl.textContent = upcomingBus.type.split('(')[0].trim();
+      if (busDestEl) busDestEl.textContent = `Towards ${getBusDestination(upcomingBus)}`;
+      if (etaEl) etaEl.textContent = `${closest.etaMinutes} min`;
+    } else {
+      if (busTypeEl) busTypeEl.textContent = 'MSRTC Bus';
+      if (busDestEl) busDestEl.textContent = 'Towards Next Station';
+      if (etaEl) etaEl.textContent = 'Soon';
+    }
+
+    // Clicking card or bus box opens live map for this stop
+    card.onclick = (e) => {
+      if (e.target.closest('#btn-home-nearby-view-all')) return;
+      openLiveMapForStop(st);
+    };
+
+    if (busBox) {
+      busBox.onclick = (e) => {
+        e.stopPropagation();
+        openLiveMapForStop(st);
+      };
+    }
+
+    const viewAllBtn = document.getElementById('btn-home-nearby-view-all');
+    if (viewAllBtn) {
+      viewAllBtn.onclick = (e) => {
+        e.stopPropagation();
+        navigateTo('nearby-stops-view');
+      };
+    }
+  }
+
+  function renderPortalNearbyStopsList() {
+    const container = document.getElementById('portal-nearby-stops-list');
+    if (!container) return;
+
+    const statusEl = document.getElementById('portal-nearby-gps-status');
+    if (statusEl) {
+      if (state.isGpsActive && state.userCoords) {
+        statusEl.textContent = `● Live GPS (±${Math.round(state.userCoords.accuracy || 10)}m)`;
+        statusEl.style.color = 'var(--status-green)';
+      } else {
+        statusEl.textContent = '● Regional Transit Network';
+        statusEl.style.color = 'var(--text-secondary)';
+      }
+    }
+
+    const sortedStops = getSortedNearbyStops(6);
+    container.innerHTML = '';
+
+    if (sortedStops.length === 0) {
+      container.innerHTML = '<div class="text-sm text-center p-3 text-secondary">No nearby bus stops found.</div>';
+      return;
+    }
+
+    sortedStops.forEach(item => {
+      const st = item.stop;
+      const dKm = item.distKm;
+      const distStr = dKm < 1 ? `${Math.round(dKm * 1000)} m away` : `${dKm.toFixed(1)} km away`;
+      const walkMins = Math.max(1, Math.round(dKm * 12));
+      const upBus = item.upcomingBus;
+
+      const card = document.createElement('div');
+      card.className = 'nearby-stop-card';
+      card.setAttribute('data-stop-id', st.id || st.name);
+
+      let nextBusHtml = '';
+      if (upBus && item.isUpcoming) {
+        nextBusHtml = `<div class="text-xs text-green font-bold mt-1" style="display:inline-flex; align-items:center; gap:4px;"><span class="pulse-dot"></span> Next: ${upBus.number} to ${getBusDestination(upBus)} in ${item.etaMinutes}m</div>`;
+      } else if (upBus) {
+        nextBusHtml = `<div class="text-xs text-secondary mt-1">Bus ${upBus.number} (Scheduled)</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="nearby-stop-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+        </div>
+        <div class="nearby-stop-info" style="flex: 1;">
+          <div class="nearby-stop-name">${getStopDisplayName(st)}</div>
+          <div class="nearby-stop-meta">
+            <span class="nearby-dist-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> ${distStr}</span>
+            <span class="nearby-walk-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~${walkMins} min walk</span>
+          </div>
+          ${nextBusHtml}
+        </div>
+        <button class="btn btn-sm btn-primary btn-select-nearby-stop" type="button" style="padding: 6px 12px; font-size: 12px; font-weight: 700; white-space: nowrap;">
+          Live Map ➔
+        </button>
+      `;
+
+      card.onclick = () => {
+        closeModal('nearby-stops-modal');
+        openLiveMapForStop(st);
+      };
+
+      container.appendChild(card);
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Dedicated Nearby Bus Stops Screen (Live GPS Precision & Arrivals)
+  // --------------------------------------------------------------------------
+
+  const nearbyPageState = {
+    selectedRadius: 'all',
+    searchQuery: '',
+    isInitialized: false
+  };
+
+  function setupNearbyStopsScreen() {
+    if (nearbyPageState.isInitialized) return;
+    nearbyPageState.isInitialized = true;
+
+    const searchInput = document.getElementById('nearby-page-search-input');
+    const clearBtn = document.getElementById('btn-clear-nearby-search');
+    const refreshBtn = document.getElementById('btn-nearby-page-refresh');
+    const radiusPillsContainer = document.getElementById('nearby-radius-pills');
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        nearbyPageState.searchQuery = (e.target.value || '').trim().toLowerCase();
+        if (clearBtn) {
+          clearBtn.style.display = nearbyPageState.searchQuery ? 'block' : 'none';
+        }
+        renderNearbyStopsCards();
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        nearbyPageState.searchQuery = '';
+        clearBtn.style.display = 'none';
+        renderNearbyStopsCards();
+      });
+    }
+
+    if (radiusPillsContainer) {
+      radiusPillsContainer.addEventListener('click', (e) => {
+        const pill = e.target.closest('.nearby-radius-pill');
+        if (!pill) return;
+        radiusPillsContainer.querySelectorAll('.nearby-radius-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        nearbyPageState.selectedRadius = pill.dataset.radius || 'all';
+        renderNearbyStopsCards();
+      });
+    }
+
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        showToast('Acquiring live GPS coordinates...');
+        refreshBtn.disabled = true;
+        refreshBtn.style.opacity = '0.6';
+        requestUserGpsLocation(
+          pos => {
+            refreshBtn.disabled = false;
+            refreshBtn.style.opacity = '1';
+            showToast('Updated nearby stops with live GPS location!');
+            renderNearbyStopsScreen();
+            renderHomeNearbyStopCard();
+          },
+          err => {
+            refreshBtn.disabled = false;
+            refreshBtn.style.opacity = '1';
+            showToast('Could not acquire GPS coordinates. Showing regional stops.');
+            renderNearbyStopsScreen();
+          }
+        );
+      });
+    }
+  }
+
+  function renderNearbyStopsScreen() {
+    setupNearbyStopsScreen();
+
+    // Update GPS status banner
+    const gpsStatusEl = document.getElementById('nearby-page-gps-status');
+    if (gpsStatusEl) {
+      if (state.isGpsActive && state.userCoords) {
+        gpsStatusEl.textContent = `● Live GPS (±${Math.round(state.userCoords.accuracy || 10)}m)`;
+        gpsStatusEl.classList.add('gps-active');
+      } else {
+        gpsStatusEl.textContent = `● Regional Network`;
+        gpsStatusEl.classList.remove('gps-active');
+      }
+    }
+
+    renderNearbyStopsCards();
+  }
+
+  function renderNearbyStopsCards() {
+    const container = document.getElementById('nearby-page-cards-container');
+    if (!container) return;
+
+    // Fetch all stops sorted by GPS distance
+    const sortedStops = getSortedNearbyStops(50);
+    const q = nearbyPageState.searchQuery;
+    const rad = nearbyPageState.selectedRadius;
+
+    // Filter by radius & search query
+    const filteredStops = sortedStops.filter(item => {
+      const st = item.stop;
+      const dKm = item.distKm;
+
+      // Radius filter
+      if (rad !== 'all') {
+        const maxDist = parseFloat(rad);
+        if (!isNaN(maxDist) && dKm > maxDist) return false;
+      }
+
+      // Query filter
+      if (q) {
+        const nameMatch = (st.name || '').toLowerCase().includes(q);
+        const nameMrMatch = (st.nameMr || '').toLowerCase().includes(q);
+        const idMatch = (st.id || '').toLowerCase().includes(q);
+        const busMatch = item.upcomingBus && (
+          (item.upcomingBus.to || '').toLowerCase().includes(q) ||
+          (item.upcomingBus.number || '').toLowerCase().includes(q)
+        );
+        if (!nameMatch && !nameMrMatch && !idMatch && !busMatch) return false;
+      }
+
+      return true;
+    });
+
+    // Narrow down to 6 nearest stops
+    const displayStops = filteredStops.slice(0, 6);
+
+    // Update Stats Bar
+    const statCount = document.getElementById('nearby-stat-count');
+    const statNearest = document.getElementById('nearby-stat-nearest');
+    const statWalking = document.getElementById('nearby-stat-walking');
+
+    if (statCount) statCount.textContent = displayStops.length;
+    if (statNearest) {
+      if (displayStops.length > 0) {
+        const d = displayStops[0].distKm;
+        statNearest.textContent = d < 1 ? `${Math.round(d * 1000)} m` : `${d.toFixed(1)} km`;
+      } else {
+        statNearest.textContent = '--';
+      }
+    }
+    if (statWalking) {
+      if (displayStops.length > 0) {
+        const wMin = Math.max(1, Math.round(displayStops[0].distKm * 12));
+        statWalking.textContent = `~${wMin} min`;
+      } else {
+        statWalking.textContent = '--';
+      }
+    }
+
+    // Render Cards
+    container.innerHTML = '';
+
+    if (displayStops.length === 0) {
+      container.innerHTML = `
+        <div class="card nearby-empty-card">
+          <div class="nearby-empty-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
+          <h4 class="nearby-empty-title">No bus stops found</h4>
+          <p class="nearby-empty-text">
+            ${q ? `No stops matching "<strong>${q}</strong>" within ${rad === 'all' ? 'the active network' : rad + ' km'}.` : 'No stops found within selected radius.'}
+          </p>
+          <button class="btn btn-secondary btn-sm" id="btn-nearby-reset-filters" type="button">
+            Reset Filters
+          </button>
+        </div>
+      `;
+      const resetBtn = document.getElementById('btn-nearby-reset-filters');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          const searchInput = document.getElementById('nearby-page-search-input');
+          if (searchInput) searchInput.value = '';
+          nearbyPageState.searchQuery = '';
+          nearbyPageState.selectedRadius = 'all';
+          const pills = document.getElementById('nearby-radius-pills');
+          if (pills) {
+            pills.querySelectorAll('.nearby-radius-pill').forEach(p => {
+              p.classList.toggle('active', p.dataset.radius === 'all');
+            });
+          }
+          const clearBtn = document.getElementById('btn-clear-nearby-search');
+          if (clearBtn) clearBtn.style.display = 'none';
+          renderNearbyStopsCards();
+        });
+      }
+      return;
+    }
+
+    displayStops.forEach(item => {
+      const st = item.stop;
+      const dKm = item.distKm;
+      const distStr = dKm < 1 ? `${Math.round(dKm * 1000)} m away` : `${dKm.toFixed(1)} km away`;
+      const walkMins = Math.max(1, Math.round(dKm * 12));
+      const upBus = item.upcomingBus;
+
+      const card = document.createElement('div');
+      card.className = 'card nearby-stop-rich-card';
+      card.setAttribute('data-stop-id', st.id || st.name);
+
+      let upcomingHtml = '';
+      if (upBus && item.isUpcoming) {
+        const busDest = getBusDestination(upBus);
+        upcomingHtml = `
+          <div class="nearby-card-bus-preview">
+            <div class="nearby-preview-left">
+              <div class="nearby-preview-badge">
+                <span class="pulse-dot"></span>
+                <span>${upBus.type || 'Ordinary'} • ${upBus.number || upBus.id}</span>
+              </div>
+              <div class="nearby-preview-dest">
+                <span class="nearby-preview-arrow">➔</span> Towards <strong>${busDest}</strong>
+              </div>
+            </div>
+            <div class="nearby-preview-right">
+              <span class="nearby-preview-eta"><span class="pulse-dot"></span>${item.etaMinutes} min</span>
+              <span class="nearby-preview-status">On Time</span>
+            </div>
+          </div>
+        `;
+      } else if (upBus) {
+        upcomingHtml = `
+          <div class="nearby-card-bus-preview scheduled">
+            <div class="nearby-preview-left">
+              <div class="nearby-preview-badge secondary">
+                <span>${upBus.type || 'Ordinary'} • ${upBus.number || upBus.id}</span>
+              </div>
+              <div class="nearby-preview-dest">
+                Towards <strong>${getBusDestination(upBus)}</strong>
+              </div>
+            </div>
+            <div class="nearby-preview-right">
+              <span class="nearby-preview-eta secondary">Scheduled</span>
+            </div>
+          </div>
+        `;
+      } else {
+        upcomingHtml = `
+          <div class="nearby-card-bus-preview empty">
+            <div class="nearby-preview-empty-text">No active buses currently scheduled</div>
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="nearby-card-header">
+          <div class="nearby-card-title-group">
+            <div class="nearby-card-icon-stop">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            </div>
+            <div>
+              <div class="flex-align gap-2">
+                <h3 class="nearby-card-title">${getStopDisplayName(st)}</h3>
+                <span class="nearby-card-code-pill">${st.id || 'ST'}</span>
+              </div>
+              ${st.nameMr ? `<div class="nearby-card-marathi">${st.nameMr}</div>` : ''}
+            </div>
+          </div>
+          <div class="nearby-card-distance-box">
+            <span class="nearby-card-dist-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg> ${distStr}</span>
+            <span class="nearby-card-walk-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ~${walkMins} min</span>
+          </div>
+        </div>
+
+        ${upcomingHtml}
+
+        <div class="nearby-card-footer">
+          <button class="btn btn-primary btn-sm btn-nearby-live-map" type="button" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            <span>Live Map</span>
+            <span>&rarr;</span>
+          </button>
+          <button class="btn btn-secondary btn-sm btn-nearby-timetable" type="button" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Routes & Times</span>
+          </button>
+        </div>
+      `;
+
+      // Live map button & card click: openLiveMapForStop
+      const liveMapBtn = card.querySelector('.btn-nearby-live-map');
+      if (liveMapBtn) {
+        liveMapBtn.onclick = (e) => {
+          e.stopPropagation();
+          openLiveMapForStop(st);
+        };
+      }
+
+      const timetableBtn = card.querySelector('.btn-nearby-timetable');
+      if (timetableBtn) {
+        timetableBtn.onclick = (e) => {
+          e.stopPropagation();
+          state.activeStop = st;
+          state.hasUserSelectedStop = true;
+          navigateTo('routes-view');
+        };
+      }
+
+      card.onclick = () => {
+        openLiveMapForStop(st);
+      };
+
+      container.appendChild(card);
+    });
   }
 
   function renderPortalFavoritesList() {
@@ -822,12 +1381,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       item.querySelector('.btn-fav-go').onclick = () => {
         closeModal('home-favorites-modal');
-        state.activeStop = stop;
-        state.hasUserSelectedStop = true;
-        state.lastViewedStopId = stop.id;
-        try { localStorage.setItem('wmb_last_viewed_stop', stop.id); } catch(e) {}
-        if (!state.selectedBus) state.selectedBus = bus || SMART_ST_DATA.buses[0];
-        navigateTo('tracking-view');
+        openLiveMapForStop(stop);
       };
 
       item.querySelector('.btn-fav-del').onclick = () => {
@@ -870,7 +1424,9 @@ document.addEventListener('DOMContentLoaded', () => {
       item.className = 'home-favorite-item';
       item.innerHTML = `
         <div class="home-fav-left">
-          <span class="home-fav-icon">⭐</span>
+          <span class="home-fav-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </span>
           <div>
             <div class="home-fav-name">${getStopDisplayName(stop)}</div>
             <div class="home-fav-sub">${stop.taluka || 'Nashik'} • ${stop.qrCode || 'MSRTC'}</div>
@@ -914,7 +1470,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.currentUser.favorites = [...state.favorites];
         try { localStorage.setItem('wmb_currentUser', JSON.stringify(state.currentUser)); } catch(e) {}
       }
-      showToast('⭐ Added to Favorite Stops!');
+      showToast('Added to Favorite Stops');
       renderHomeFavoritesList();
       closeModal('add-favorite-modal');
     } else {
@@ -949,7 +1505,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (delayedBuses.length === 0) {
       card.classList.remove('has-delay');
-      if (iconEl) iconEl.textContent = '🟢';
+      if (iconEl) iconEl.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--apple-green);"></span>';
       if (badgeEl) {
         badgeEl.className = 'badge badge-green';
         badgeEl.textContent = 'Normal';
@@ -958,7 +1514,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (routesListEl) routesListEl.style.display = 'none';
     } else if (delayedBuses.length <= 4) {
       card.classList.add('has-delay');
-      if (iconEl) iconEl.textContent = '🟠';
+      if (iconEl) iconEl.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--apple-orange);"></span>';
       if (badgeEl) {
         badgeEl.className = 'badge badge-orange';
         badgeEl.textContent = 'Minor Delays';
@@ -967,11 +1523,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (detailEl) detailEl.textContent = `${affectedRoutes.length} corridor(s) experiencing traffic delays (Avg delay ~${avgDelay} min).`;
       if (routesListEl) {
         routesListEl.style.display = 'flex';
-        routesListEl.innerHTML = affectedRoutes.map(r => `<span style="color:var(--status-orange); font-size:11px;">⚠️ ${r}</span>`).join('');
+        routesListEl.innerHTML = affectedRoutes.map(r => `<span style="color:var(--status-orange); font-size:11px; display:inline-flex; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${r}</span>`).join('');
       }
     } else {
       card.classList.add('has-delay');
-      if (iconEl) iconEl.textContent = '🔴';
+      if (iconEl) iconEl.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--apple-red);"></span>';
       if (badgeEl) {
         badgeEl.className = 'badge badge-orange';
         badgeEl.style.background = 'rgba(239, 68, 68, 0.15)';
@@ -981,7 +1537,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (detailEl) detailEl.textContent = 'Multiple corridors experiencing weather & highway delays. Check trip timelines.';
       if (routesListEl) {
         routesListEl.style.display = 'flex';
-        routesListEl.innerHTML = affectedRoutes.slice(0, 3).map(r => `<span style="color:#EF4444; font-size:11px;">⚠️ ${r}</span>`).join('');
+        routesListEl.innerHTML = affectedRoutes.slice(0, 3).map(r => `<span style="color:#EF4444; font-size:11px; display:inline-flex; align-items:center; gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${r}</span>`).join('');
       }
     }
   }
@@ -1008,7 +1564,10 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="home-report-mini-meta">
           <span>By ${rep.reporter}</span>
-          <span style="color:var(--status-green); font-weight:700;">👍 ${rep.votes} verified</span>
+          <span style="color:var(--apple-green); font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            ${rep.votes} verified
+          </span>
         </div>
       `;
       container.appendChild(item);
@@ -1191,7 +1750,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filteredRoutes.length === 0) {
       container.innerHTML = `
         <div class="card text-center p-4">
-          <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
+          <div style="margin-bottom: 8px; color: var(--apple-label-tertiary);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </div>
           <div style="font-weight: 700; font-size: 16px; margin-bottom: 4px;">No routes found</div>
           <div class="text-sm text-secondary">
             No MSRTC bus routes match "${query}". Try searching for Nashik, Shirdi, Pune, Yeola, or Niphad.
@@ -1266,7 +1829,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <span>ETA: <strong style="color:var(--status-green);">${b.etaMinutes} min</strong></span>
             </div>
             <button type="button" class="route-bus-track-action-btn" data-bus-id="${b.id}">
-              🗺️ Track Bus Live
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              <span>Track on Live Map</span>
             </button>
           </div>
         `;
@@ -1312,7 +1876,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <!-- Via Corridor -->
         <div class="route-via-row">
-          <span class="route-via-label">🛣️ Via:</span>
+          <span class="route-via-label">Via:</span>
           <span>${viaText}</span>
         </div>
 
@@ -1346,7 +1910,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ${nearestBus ? `
           <div class="route-next-bus-pill">
             <div class="route-next-bus-left">
-              <span>⚡</span>
+              <span class="pulse-dot"></span>
               <span>Next: <strong>${nearestBus.number}</strong> (${nearestBus.type.split('(')[0].trim()})</span>
             </div>
             <div class="route-next-bus-eta">
@@ -1358,20 +1922,23 @@ document.addEventListener('DOMContentLoaded', () => {
         <!-- Interactive Actions -->
         <div class="route-actions-row">
           <button type="button" class="route-btn route-btn-primary btn-track-full-route" data-route-id="${route.id}">
-            🗺️ <span>${dict.trackLiveMap || 'Track on Map'}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            <span>${dict.trackLiveMap || 'Track on Map'}</span>
           </button>
           <button type="button" class="route-btn route-btn-secondary btn-toggle-stops ${isStopsExpanded ? 'expanded' : ''}" data-route-id="${route.id}">
-            🚏 <span>${isStopsExpanded ? (dict.hideStops || 'Hide Stops') : (dict.viewStops || 'View Stops')} (${stops.length})</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <span>${isStopsExpanded ? (dict.hideStops || 'Hide Stops') : (dict.viewStops || 'View Stops')} (${stops.length})</span>
           </button>
           <button type="button" class="route-btn route-btn-secondary btn-toggle-buses ${isBusesExpanded ? 'expanded' : ''}" data-route-id="${route.id}">
-            🚌 <span>${isBusesExpanded ? (dict.hideLiveBuses || 'Hide Buses') : (dict.viewLiveBuses || 'Live Buses')} (${runningBuses.length})</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/><path d="M4 11h16"/><path d="M4 7h16"/></svg>
+            <span>${isBusesExpanded ? (dict.hideLiveBuses || 'Hide Buses') : (dict.viewLiveBuses || 'Live Buses')} (${runningBuses.length})</span>
           </button>
         </div>
 
         <!-- Collapsible Stops Drawer -->
         <div class="route-collapsible-drawer route-stops-drawer ${isStopsExpanded ? 'open' : ''}" id="stops-drawer-${route.id}">
           <div class="route-drawer-header">
-            <span>🚏 All ${stops.length} Intermediate Waypoints</span>
+            <span>All ${stops.length} Intermediate Waypoints</span>
             <span class="text-xs text-secondary">Ordered Sequence</span>
           </div>
           <div class="route-stops-list">
@@ -1382,7 +1949,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <!-- Collapsible Buses Drawer -->
         <div class="route-collapsible-drawer route-buses-drawer ${isBusesExpanded ? 'open' : ''}" id="buses-drawer-${route.id}">
           <div class="route-drawer-header">
-            <span>🚌 ${runningBuses.length} Active Buses on this Route</span>
+            <span>${runningBuses.length} Active Buses on this Route</span>
             <span class="badge badge-green">● Live Telemetry</span>
           </div>
           <div class="route-buses-grid">
@@ -1541,7 +2108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const safeQ = cleanQ.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         dropdown.innerHTML = `
           <div class="stop-search-empty">
-            <div>🔍 No bus stops found matching "<strong>${safeQ}</strong>"</div>
+            <div>No bus stops found matching "<strong>${safeQ}</strong>"</div>
             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">
               Try searching by town or village name (e.g. Niphad, Yeola, Chandori, Saikheda, Sinnar)
             </div>
@@ -1556,7 +2123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let html = '';
       if (!cleanQ) {
-        html += `<div class="stop-search-header-label">⭐ Popular Bus Stations & Hubs</div>`;
+        html += `<div class="stop-search-header-label">Popular Bus Stations & Hubs</div>`;
       }
 
       matched.forEach(st => {
@@ -1585,10 +2152,14 @@ document.addEventListener('DOMContentLoaded', () => {
           ? (st.taluka ? `${st.taluka}, ${st.district || 'MSRTC'}` : 'Major MSRTC Station')
           : (st.route || 'Highway Corridor Stop');
 
+        const stopIconSvg = st.isMajor
+          ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h4"/></svg>'
+          : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/></svg>';
+
         html += `
           <div class="stop-search-item ${isCurrentActive ? 'is-active-stop' : ''}" data-stop-id="${st.id}">
             <div class="stop-search-item-left">
-              <span class="stop-search-item-icon">${st.isMajor ? '🚏' : '📍'}</span>
+              <span class="stop-search-item-icon">${stopIconSvg}</span>
               <div class="stop-search-item-text">
                 <div class="stop-search-item-title">
                   <span>${dispName}</span>
@@ -1600,7 +2171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="stop-search-item-right">
               ${distText ? `<span class="stop-search-item-dist">${distText}</span>` : ''}
-              <span class="stop-search-select-badge">Switch ➔</span>
+              <span class="stop-search-select-badge">Switch</span>
             </div>
           </div>
         `;
@@ -1626,7 +2197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.lastViewedStopId = resolved.id;
         try { localStorage.setItem('wmb_last_viewed_stop', resolved.id); } catch(e) {}
         renderStopScreen();
-        showToast(`🚏 Connected to ${getStopDisplayName(resolved)}`);
+        showToast(`Connected to ${getStopDisplayName(resolved)}`);
         searchInput.value = getStopDisplayName(resolved);
         if (clearBtn) clearBtn.style.display = 'flex';
       } else {
@@ -1705,25 +2276,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAP_TILE_LAYERS = [
     {
       name: 'OpenStreetMap Standard',
-      icon: '🚏',
       url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      options: { maxZoom: 19, attribution: '© OpenStreetMap contributors • Where\'s My Bus?' }
+      options: { maxZoom: 19, attribution: '© OpenStreetMap contributors • Track My Bus' }
     },
     {
       name: 'Clean Street Map (Esri)',
-      icon: '🗺️',
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
       options: { maxZoom: 19, attribution: 'Tiles © Esri' }
     },
     {
       name: 'Humanitarian Transit',
-      icon: '🚌',
       url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
       options: { maxZoom: 19, subdomains: ['a', 'b'], attribution: '© OpenStreetMap contributors' }
     },
     {
       name: 'Satellite Aerial View',
-      icon: '🛰️',
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       options: { maxZoom: 18, attribution: 'Tiles © Esri' }
     }
@@ -1759,12 +2326,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Filter to ONLY buses running on the SAME corridor route
     const sameRouteBuses = SMART_ST_DATA.buses.filter(b => b.routeId === currentRouteId);
-    const busesToShow = sameRouteBuses.length > 0 ? sameRouteBuses : (currentBus ? [currentBus] : SMART_ST_DATA.buses.slice(0, 3));
+    const candidateBuses = sameRouteBuses.length > 0 ? sameRouteBuses : (currentBus ? [currentBus] : SMART_ST_DATA.buses.slice(0, 3));
 
-    busesToShow.forEach(b => {
-      const isSelected = currentBus ? (b.id === currentBus.id) : false;
-
-      // Locate user stop in this bus's intermediate stops
+    // Map each bus with pass/upcoming status
+    const mappedBuses = candidateBuses.map(b => {
       let userStopIdx = -1;
       if (b.intermediateStops && userStop) {
         userStopIdx = b.intermediateStops.findIndex(st => {
@@ -1776,7 +2341,6 @@ document.addEventListener('DOMContentLoaded', () => {
           return false;
         });
 
-        // If not exact match, check nearest stop along the corridor within 8km
         if (userStopIdx === -1 && userStop.latitude && userStop.longitude) {
           let minD = Infinity, closestIdx = -1;
           b.intermediateStops.forEach((st, idx) => {
@@ -1791,7 +2355,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Determine bus current target approaching stop index
       let targetStopIdx = -1;
       if (b.intermediateStops) {
         targetStopIdx = b.intermediateStops.findIndex(st => st.isCurrentTarget);
@@ -1800,21 +2363,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Check whether this bus has already covered/passed commuter's stop
       let isPassed = false;
       if (userStopIdx !== -1) {
         if (targetStopIdx === -1) {
-          isPassed = true; // Route fully completed
+          isPassed = true;
         } else if (targetStopIdx > userStopIdx) {
-          isPassed = true; // Bus is targeting a stop past user's stop -> passed!
+          isPassed = true;
         } else {
-          isPassed = false; // Bus hasn't reached user's stop yet -> upcoming!
+          isPassed = false;
         }
       } else {
-        // Fallback if stop is off-route
         const mid = b.intermediateStops ? Math.floor(b.intermediateStops.length / 2) : 10;
         isPassed = targetStopIdx > mid;
       }
+
+      return { bus: b, isPassed };
+    });
+
+    // Sort so UPCOMING buses are shown first!
+    mappedBuses.sort((a, b) => {
+      if (a.isPassed !== b.isPassed) return a.isPassed ? 1 : -1;
+      return 0;
+    });
+
+    mappedBuses.forEach(item => {
+      const b = item.bus;
+      const isPassed = item.isPassed;
+      const isSelected = currentBus ? (b.id === currentBus.id) : false;
 
       const chip = document.createElement('button');
       const statusClass = isPassed ? 'chip-passed' : 'chip-upcoming';
@@ -1833,7 +2408,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       chip.innerHTML = `
-        <span class="chip-num">🚌 ${shortPlate}</span>
+        <span class="chip-num">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px; margin-right:3px;"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 18v2M17 18v2M3 10h18"/><circle cx="7.5" cy="14.5" r="1"/><circle cx="16.5" cy="14.5" r="1"/></svg>${shortPlate}
+        </span>
         <span class="chip-time">${schedTime}</span>
         <span class="chip-status-tag">${badgeLabel}</span>
       `;
@@ -1856,7 +2433,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="bus-map-popup-card">
         <div class="popup-bus-header">
           <div class="flex-between gap-2" style="margin-bottom: 4px;">
-            <span class="badge" style="background:${bus.badgeColor}; color:#FFFFFF; font-size:11px; padding: 4px 8px;">🚌 ${bus.number}</span>
+            <span class="badge" style="background:${bus.badgeColor}; color:#FFFFFF; font-size:11px; padding: 4px 8px;">${bus.number}</span>
             <span class="badge badge-green" style="font-size:10px;">● ${bus.status}</span>
           </div>
           <div style="font-weight: 800; font-size: 13px; color: var(--text-main); margin-top: 2px;">${bus.type}</div>
@@ -1968,7 +2545,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="trip-time-col">
           <span class="trip-time-text">${timeText}</span>
-          ${(isCurrent || isUpcoming) ? `<button class="btn-stop-alert-bell" data-stop="${st.name}" title="Set reminder for ${displayName}">🔔</button>` : ''}
+          ${(isCurrent || isUpcoming) ? `<button class="btn-stop-alert-bell" data-stop="${st.name}" title="Set reminder for ${displayName}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>` : ''}
         </div>
       `;
 
@@ -1995,17 +2572,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const badge = document.createElement('div');
         badge.className = 'trip-bus-inline-badge';
         badge.id = 'trip-live-bus-badge';
-        badge.textContent = '🚌';
+        badge.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 18v2M17 18v2M3 10h18"/><circle cx="7.5" cy="14.5" r="1"/><circle cx="16.5" cy="14.5" r="1"/></svg>`;
         badge.style.top = '9px';
         nodeCol.appendChild(badge);
       }
     }
 
-    // Auto-scroll timeline to the current approaching stop
+    // Auto-scroll timeline internally to the current approaching stop (without scrolling window)
     setTimeout(() => {
       const currentStopEl = container.querySelector('.trip-stop-row.current');
-      if (currentStopEl) {
-        currentStopEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (currentStopEl && container.scrollHeight > container.clientHeight) {
+        const topPos = currentStopEl.offsetTop - (container.clientHeight / 2);
+        container.scrollTo({ top: Math.max(0, topPos), behavior: 'smooth' });
       }
     }, 150);
 
@@ -2016,16 +2594,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const stopName = e.currentTarget.dataset.stop;
         const isActive = e.currentTarget.classList.toggle('active');
         if (isActive) {
-          showToast(`🔔 Reminder alert set for ${stopName}!`);
+          showToast(`Reminder alert set for ${stopName}!`);
         } else {
-          showToast(`🔕 Reminder removed for ${stopName}`);
+          showToast(`Reminder removed for ${stopName}`);
         }
       });
     });
   }
 
   function renderTrackingScreen() {
+    if (!state.selectedBus) {
+      state.selectedBus = SMART_ST_DATA.buses[0];
+    }
     const bus = state.selectedBus;
+    if (!state.activeStop) {
+      state.activeStop = (SMART_ST_DATA.busStops && SMART_ST_DATA.busStops.find(s => s.id === bus.targetStopId)) ||
+        (bus.intermediateStops && SMART_ST_DATA.busStops && SMART_ST_DATA.busStops.find(s => s.name === bus.intermediateStops[0]?.name)) ||
+        (SMART_ST_DATA.busStops && SMART_ST_DATA.busStops[0]);
+    }
     const stop = state.activeStop;
     
     if (!bus || !stop) return; // Safely abort if missing
@@ -2139,7 +2725,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(state.mapInstance);
 
     state.routePolylineCore = L.polyline(roadPath, {
-      color: '#0ea5e9',
+      color: '#3B82F6',
       weight: 5,
       opacity: 0.95,
       lineCap: 'round',
@@ -2155,7 +2741,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const endPt = roadPath[roadPath.length - 1];
     const flagIcon = L.divIcon({
       className: 'custom-flag-leaflet-icon',
-      html: `<div class="terminal-flag-pin">🏁</div>`,
+      html: `<div class="terminal-flag-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>`,
       iconSize: [32, 32],
       iconAnchor: [16, 16]
     });
@@ -2169,7 +2755,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (st.lat && st.lng) {
           const isDeparted = st.status === 'Departed';
           const isTarget = st.isCurrentTarget;
-          const wpColor = isDeparted ? '#94A3B8' : (isTarget ? '#10B981' : '#0EA5E9');
+          const wpColor = isDeparted ? '#94A3B8' : (isTarget ? '#10B981' : '#3B82F6');
           const wpBorder = isDeparted ? '#64748B' : '#FFFFFF';
           const wpSize = isTarget ? 18 : 14;
           const wpAnchor = isTarget ? 9 : 7;
@@ -2195,7 +2781,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="live-bus-pin-wrap" title="Bus ${bus.number} - Click for details">
           <div class="live-bus-pulse-ring" style="background: ${bus.badgeColor}40;"></div>
           <div class="live-bus-circle" style="background: ${bus.badgeColor};">
-            <span>🚌</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 17h2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10h2"/>
+              <circle cx="7" cy="17" r="2"/>
+              <path d="M9 17h6"/>
+              <circle cx="17" cy="17" r="2"/>
+              <path d="M4 11h16"/>
+              <path d="M4 7h16"/>
+            </svg>
           </div>
         </div>
       `,
@@ -2313,7 +2906,7 @@ document.addEventListener('DOMContentLoaded', () => {
           badge = document.createElement('div');
           badge.className = 'trip-bus-inline-badge';
           badge.id = 'trip-live-bus-badge';
-          badge.textContent = '🚌';
+          badge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/><path d="M4 11h16"/><path d="M4 7h16"/></svg>`;
           nodeCol.appendChild(badge);
         }
 
@@ -2330,12 +2923,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 3. Smooth auto-scroll only when target stop changes
+    // 3. Smooth auto-scroll internally only when target stop changes
     if (state.lastTimelineTargetIdx !== currentTargetIdx) {
       state.lastTimelineTargetIdx = currentTargetIdx;
       const currentStopEl = container.querySelector('.trip-stop-row.current');
-      if (currentStopEl) {
-        currentStopEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (currentStopEl && container.scrollHeight > container.clientHeight) {
+        const topPos = currentStopEl.offsetTop - (container.clientHeight / 2);
+        container.scrollTo({ top: Math.max(0, topPos), behavior: 'smooth' });
       }
     }
   }
@@ -2434,9 +3028,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (etaEl) etaEl.textContent = '0 mins';
         if (statusBadge) {
           statusBadge.className = 'badge badge-green';
-          statusBadge.textContent = state.currentLanguage === 'mr' ? '● स्थानकावर पोहोचली 🚏' : (state.currentLanguage === 'hi' ? '● स्टॉप पर पहुँची 🚏' : '● Arrived at Stop 🚏');
+          statusBadge.textContent = state.currentLanguage === 'mr' ? '● स्थानकावर पोहोचली' : (state.currentLanguage === 'hi' ? '● स्टॉप पर पहुँची' : '● Arrived at Stop');
         }
-        if (bannerTitle) bannerTitle.textContent = state.currentLanguage === 'mr' ? `${stopDisplayName} येथे! 🚏` : (state.currentLanguage === 'hi' ? `${stopDisplayName} पर! 🚏` : `At ${stopDisplayName}! 🚏`);
+        if (bannerTitle) bannerTitle.textContent = state.currentLanguage === 'mr' ? `${stopDisplayName} येथे पोहोचली` : (state.currentLanguage === 'hi' ? `${stopDisplayName} पर पहुँची` : `Arrived at ${stopDisplayName}`);
         if (bannerSub) bannerSub.textContent = state.currentLanguage === 'mr' ? 'प्रवासी चढत आहेत • दरवाजे उघडे' : (state.currentLanguage === 'hi' ? 'यात्री चढ़ रहे हैं • दरवाजे खुले' : 'Boarding Passengers • Doors Open');
 
         // During dwell, the bus badge stays firmly on the dwell stop
@@ -2657,10 +3251,10 @@ document.addEventListener('DOMContentLoaded', () => {
           if (state.busMarker && state.mapInstance) {
             state.mapInstance.setView(state.busMarker.getLatLng(), 14, { animate: true });
           }
-          showToast('🧭 Auto-Follow Bus: ON');
+          showToast('Auto-Follow Bus: ON');
         } else {
           followBtn.classList.remove('active');
-          showToast('🧭 Auto-Follow Bus: OFF');
+          showToast('Auto-Follow Bus: OFF');
         }
       });
     }
@@ -2690,21 +3284,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.userLocationMarker = L.marker([uLat, uLng], { icon: userIcon }).addTo(state.mapInstance)
                   .bindPopup('<b>Your Current Location</b>').openPopup();
                 state.mapInstance.setView([uLat, uLng], 14, { animate: true });
-                showToast('📍 Located your live GPS position!');
+                showToast('Located your live GPS position!');
               }
             },
             () => {
               // Fallback to stop location
               if (state.mapInstance && state.stopMarker) {
                 state.mapInstance.setView(state.stopMarker.getLatLng(), 15, { animate: true });
-                showToast(`🚏 Centered on ${state.activeStop.name}`);
+                showToast(`Centered on ${state.activeStop.name}`);
               }
             },
             { enableHighAccuracy: true, timeout: 5000 }
           );
         } else if (state.mapInstance && state.stopMarker) {
           state.mapInstance.setView(state.stopMarker.getLatLng(), 15, { animate: true });
-          showToast(`🚏 Centered on ${state.activeStop.name}`);
+          showToast(`Centered on ${state.activeStop.name}`);
         }
       });
     }
@@ -2718,7 +3312,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const fb = document.getElementById('btn-toggle-follow-bus');
           if (fb) fb.classList.remove('active');
           state.mapInstance.fitBounds(state.routePolylineCore.getBounds(), { padding: [40, 40], animate: true });
-          showToast('📐 Showing Full Route');
+          showToast('Showing Full Route');
         }
       });
     }
@@ -2744,7 +3338,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bus.intermediateStops.forEach(st => {
       const isTarget = st.isCurrentTarget;
       const displayName = getStopDisplayName(st);
-      const targetLabel = isTarget ? (state.currentLanguage === 'mr' ? '📍 (लक्षित थांबा)' : (state.currentLanguage === 'hi' ? '📍 (लक्षित स्टॉप)' : '📍 (Target Stop)')) : '';
+      const targetLabel = isTarget ? (state.currentLanguage === 'mr' ? '(लक्षित थांबा)' : (state.currentLanguage === 'hi' ? '(लक्षित स्टॉप)' : '(Target Stop)')) : '';
       const html = `
         <div class="stop-timeline-row ${isTarget ? 'active' : ''}">
           <div class="stop-dot"></div>
@@ -2762,6 +3356,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // SCREEN 6: BUS STOP INFO & FACILITIES
   // --------------------------------------------------------------------------
 
+  function getAmenitySvg(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('bench') || n.includes('seat') || n.includes('बाकडा')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18v3M20 18v3M2 11h20M4 18h16M4 11V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5"/></svg>`;
+    }
+    if (n.includes('shade') || n.includes('shelter') || n.includes('शेड')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`;
+    }
+    if (n.includes('light') || n.includes('solar') || n.includes('पथदिवे')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>`;
+    }
+    if (n.includes('water') || n.includes('पाणी')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`;
+    }
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+  }
+
+  function getEmergencyContactSvg(role) {
+    const r = (role || '').toLowerCase();
+    if (r.includes('police')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+    }
+    if (r.includes('ambulance') || r.includes('hospital')) {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/></svg>`;
+    }
+    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+  }
+
   function renderStopInfoScreen() {
     const stop = state.activeStop;
     document.getElementById('stop-info-title').textContent = getStopDisplayName(stop);
@@ -2775,7 +3397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const facName = (state.currentLanguage === 'mr' && fac.nameMr) ? fac.nameMr : fac.name;
         const html = `
           <div class="amenity-card">
-            <div class="amenity-icon">${fac.icon}</div>
+            <div class="amenity-icon">${getAmenitySvg(fac.name)}</div>
             <div>
               <div style="font-weight:700; font-size:13px;">${facName}</div>
               <div style="font-size:11px; color:var(--text-secondary);">${fac.status}</div>
@@ -2793,9 +3415,12 @@ document.addEventListener('DOMContentLoaded', () => {
       stop.emergencyContacts.forEach(c => {
         const html = `
           <div class="emergency-row">
-            <div>
-              <div style="font-weight:700; font-size:14px;">${c.icon} ${c.role}</div>
-              <div style="font-size:12px; color:var(--primary-blue); font-weight:700;">${c.number}</div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="color: var(--apple-tint);">${getEmergencyContactSvg(c.role)}</div>
+              <div>
+                <div style="font-weight:700; font-size:14px;">${c.role}</div>
+                <div style="font-size:12px; color:var(--primary-blue); font-weight:700;">${c.number}</div>
+              </div>
             </div>
             <a href="tel:${c.number}" class="btn btn-sm btn-primary">Call Now</a>
           </div>
@@ -2909,7 +3534,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="flex-between mt-2">
             <span class="badge badge-green">${rep.statusBadge}</span>
             <button class="btn btn-sm btn-secondary btn-upvote-report" data-id="${rep.id}">
-              👍 Upvote (${rep.votes})
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Verify (${rep.votes})</span>
             </button>
           </div>
         </div>
@@ -2943,7 +3569,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const newReport = {
         id: `REP-${Date.now()}`,
-        stopId: state.activeStop.id,
+        stopId: state.activeStop ? state.activeStop.id : (SMART_ST_DATA.busStops[0] ? SMART_ST_DATA.busStops[0].id : 'NPH-01'),
         type: val,
         title: note,
         reporter: "Commuter Passenger",
@@ -3206,8 +3832,24 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNearbyStopsFeature();
     setupStopSearch();
     setupRoutesScreen();
+    setupNearbyStopsScreen();
     setupNetworkStatus();
     setupHomeFeatures();
+    setupAccessibilityControls();
+
+    // Trigger initial high-accuracy GPS check
+    requestUserGpsLocation(
+      pos => {
+        renderHomeNearbyStopCard();
+        renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
+        if (state.currentScreen === 'nearby-stops-view') {
+          renderNearbyStopsScreen();
+        }
+      },
+      err => {
+        // Quiet fallback
+      }
+    );
   }
 
   function setupHomeFeatures() {
@@ -3250,7 +3892,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try { localStorage.setItem('wmb_feedbacks', JSON.stringify(state.feedbackList)); } catch(e) {}
         lastFeedbackTime = now;
 
-        showToast('🙏 Thank you! Your feedback has been recorded.');
+        showToast('Thank you! Your feedback has been recorded.');
         if (msgInput) msgInput.value = '';
         if (contactInput) contactInput.value = '';
         closeModal('feedback-modal');
@@ -3338,7 +3980,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.currentUser = user;
         try { localStorage.setItem('wmb_currentUser', JSON.stringify(user)); } catch(e) {}
 
-        showToast(`🎉 Welcome, ${user.name}!`);
+        showToast(`Welcome, ${user.name}!`);
         closeModal('auth-modal');
         if (contactInput) contactInput.value = '';
         if (passwordInput) passwordInput.value = '';
@@ -3397,7 +4039,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="text-sm">${st.taluka || 'Nashik'} • ${st.qrCode || 'MSRTC'}</div>
           </div>
           <button class="btn btn-sm ${isFav ? 'btn-secondary' : 'btn-outline-primary'} btn-toggle-fav-pick" data-stop-id="${st.id}">
-            ${isFav ? '⭐ Starred' : '+ Add'}
+            ${isFav ? 'Starred' : '+ Add'}
           </button>
         `;
 
@@ -3411,7 +4053,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
               addFavoriteStop(st.id);
               btn.className = 'btn btn-sm btn-secondary';
-              btn.textContent = '⭐ Starred';
+              btn.textContent = 'Starred';
             }
           });
         }
@@ -3562,7 +4204,7 @@ document.addEventListener('DOMContentLoaded', () => {
           item.className = 'home-search-item';
           item.innerHTML = `
             <div>
-              <div style="font-weight: 700; font-size: 13px;">🚏 ${getStopDisplayName(stop)}</div>
+              <div style="font-weight: 700; font-size: 13px;">${getStopDisplayName(stop)}</div>
               <div class="text-xs" style="color: var(--text-secondary);">${stop.taluka || 'Nashik'} • ${stop.qrCode || 'MSRTC'}</div>
             </div>
             <span class="badge badge-blue">View Live</span>
@@ -3570,16 +4212,7 @@ document.addEventListener('DOMContentLoaded', () => {
           item.onclick = () => {
             quickSearchDropdown.style.display = 'none';
             quickSearchInput.value = '';
-            state.activeStop = stop;
-            state.hasUserSelectedStop = true;
-            state.lastViewedStopId = stop.id;
-            try { localStorage.setItem('wmb_last_viewed_stop', stop.id); } catch(err) {}
-            if (!state.selectedBus) {
-              const stopNameLower = (stop.name || '').toLowerCase();
-              const foundBus = SMART_ST_DATA.buses.find(b => b.intermediateStops && b.intermediateStops.some(s => s.name.toLowerCase() === stopNameLower));
-              state.selectedBus = foundBus || SMART_ST_DATA.buses[0];
-            }
-            navigateTo('tracking-view');
+            openLiveMapForStop(stop);
           };
           quickSearchDropdown.appendChild(item);
         });
@@ -3590,7 +4223,7 @@ document.addEventListener('DOMContentLoaded', () => {
           item.className = 'home-search-item';
           item.innerHTML = `
             <div>
-              <div style="font-weight: 700; font-size: 13px;">🚌 ${bus.number} (${bus.type})</div>
+              <div style="font-weight: 700; font-size: 13px;">${bus.number} (${bus.type})</div>
               <div class="text-xs" style="color: var(--text-secondary);">${bus.routeName} • ETA: ${bus.etaMinutes}m</div>
             </div>
             <span class="badge badge-green">Track GPS</span>
@@ -3634,6 +4267,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnPortalMyPass = document.getElementById('btn-portal-my-pass');
     if (btnPortalMyPass) {
       btnPortalMyPass.addEventListener('click', () => openModal('my-pass-modal'));
+    }
+
+    const btnPortalNearbyStops = document.getElementById('btn-portal-nearby-stops');
+    if (btnPortalNearbyStops) {
+      btnPortalNearbyStops.addEventListener('click', () => {
+        navigateTo('nearby-stops-view');
+      });
+    }
+
+    const btnPortalLocateMe = document.getElementById('btn-portal-locate-me');
+    if (btnPortalLocateMe) {
+      btnPortalLocateMe.addEventListener('click', () => {
+        showToast('Acquiring live GPS coordinates...');
+        requestUserGpsLocation(
+          pos => {
+            renderPortalNearbyStopsList();
+            renderHomeNearbyStopCard();
+            renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
+            showToast('Updated nearby stops based on your location!');
+          },
+          err => {
+            showToast('Could not acquire GPS position. Showing regional stops.');
+          }
+        );
+      });
     }
 
     const btnPortalMyFavourites = document.getElementById('btn-portal-my-favourites');
@@ -3686,7 +4344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnShowTicketQr = document.getElementById('btn-show-ticket-qr');
     if (btnShowTicketQr) {
       btnShowTicketQr.addEventListener('click', () => {
-        showToast('📱 Conductor QR code active and verified.');
+        showToast('Conductor QR code active and verified.');
       });
     }
 
@@ -3701,14 +4359,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRenewPass = document.getElementById('btn-renew-pass');
     if (btnRenewPass) {
       btnRenewPass.addEventListener('click', () => {
-        showToast('🔄 Renewal request submitted to MSRTC Nashik Division.');
+        showToast('Renewal request submitted to MSRTC Nashik Division.');
       });
     }
 
     const btnDownloadPass = document.getElementById('btn-download-pass');
     if (btnDownloadPass) {
       btnDownloadPass.addEventListener('click', () => {
-        showToast('📥 Smart Pass downloaded to device storage.');
+        showToast('Smart Pass downloaded to device storage.');
       });
     }
 
@@ -3723,6 +4381,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+
+  function setupAccessibilityControls() {
+    const toggleDark = document.getElementById('toggle-dark-mode');
+    const toggleContrast = document.getElementById('toggle-high-contrast');
+    const toggleLarge = document.getElementById('toggle-large-text');
+
+    // Restore saved preferences
+    const isDark = localStorage.getItem('wmb_dark_mode') === 'true';
+    const isContrast = localStorage.getItem('wmb_high_contrast') === 'true';
+    const isLarge = localStorage.getItem('wmb_large_text') === 'true';
+
+    if (toggleDark) {
+      toggleDark.checked = isDark;
+      document.body.classList.toggle('dark-mode', isDark);
+      toggleDark.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.body.classList.toggle('dark-mode', checked);
+        try { localStorage.setItem('wmb_dark_mode', checked); } catch(err) {}
+        showToast(checked ? 'Dark Mode activated' : 'Light Mode activated');
+      });
+    }
+
+    if (toggleContrast) {
+      toggleContrast.checked = isContrast;
+      document.body.classList.toggle('high-contrast', isContrast);
+      toggleContrast.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.body.classList.toggle('high-contrast', checked);
+        try { localStorage.setItem('wmb_high_contrast', checked); } catch(err) {}
+        showToast(checked ? 'High Contrast Mode activated' : 'Standard Contrast restored');
+      });
+    }
+
+    if (toggleLarge) {
+      toggleLarge.checked = isLarge;
+      document.body.classList.toggle('large-text-mode', isLarge);
+      toggleLarge.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.body.classList.toggle('large-text-mode', checked);
+        try { localStorage.setItem('wmb_large_text', checked); } catch(err) {}
+        showToast(checked ? 'Large Readable Text activated' : 'Standard Text Size restored');
+      });
+    }
+  }
   function setupNetworkStatus() {
     const banner = document.getElementById('offline-banner') || document.querySelector('.offline-banner');
     if (!banner) return;
@@ -3735,6 +4437,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
+    window.addEventListener('resize', () => {
+      if (state.mapInstance) state.mapInstance.invalidateSize();
+    });
     updateOnlineStatus();
   }
 
@@ -3752,9 +4457,13 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal,
     simulateQRScan,
     renderRoutesScreen,
-    renderHomeDashboard
+    renderNearbyStopsScreen,
+    renderHomeDashboard,
+    openLiveMapForStop,
+    findBestUpcomingBusForStop
   };
   window.SmartST = window.WMB;
+  window.TMB = window.WMB;
 
   // Start on Splash Screen
   navigateTo('splash-view');
