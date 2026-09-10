@@ -4428,95 +4428,402 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // 9. Home Quick Search with Instant Suggestions
+    // 9. Apple HIG Search Field & Scope Bar with Recent Searches & Accessibility
     const quickSearchInput = document.getElementById('home-quick-search-input');
-    const quickSearchBtn = document.getElementById('home-quick-search-btn');
+    const quickSearchClearBtn = document.getElementById('home-search-clear-btn');
     const quickSearchDropdown = document.getElementById('home-search-dropdown');
+    const scopeBar = document.getElementById('home-search-scope-bar');
+    let searchScope = 'all';
+    let highlightedIndex = -1;
 
-    if (quickSearchInput && quickSearchDropdown) {
-      quickSearchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim().toLowerCase();
-        if (!query) {
-          quickSearchDropdown.style.display = 'none';
-          quickSearchDropdown.innerHTML = '';
-          return;
+    function getRecentSearches() {
+      try {
+        const raw = localStorage.getItem('wmb_recent_searches');
+        return raw ? JSON.parse(raw) : [];
+      } catch(e) { return []; }
+    }
+
+    function saveRecentSearch(item) {
+      try {
+        let recents = getRecentSearches().filter(r => r.id !== item.id && r.label !== item.label);
+        recents.unshift(item);
+        if (recents.length > 5) recents = recents.slice(0, 5);
+        localStorage.setItem('wmb_recent_searches', JSON.stringify(recents));
+      } catch(e) {}
+    }
+
+    function clearRecentSearches() {
+      try {
+        localStorage.removeItem('wmb_recent_searches');
+      } catch(e) {}
+    }
+
+    function updateClearBtnVisibility() {
+      if (!quickSearchClearBtn || !quickSearchInput) return;
+      if (quickSearchInput.value.length > 0) {
+        quickSearchClearBtn.style.display = 'flex';
+      } else {
+        quickSearchClearBtn.style.display = 'none';
+      }
+    }
+
+    function closeSearch() {
+      if (!quickSearchDropdown || !quickSearchInput) return;
+      quickSearchDropdown.style.display = 'none';
+      quickSearchInput.setAttribute('aria-expanded', 'false');
+      quickSearchInput.removeAttribute('aria-activedescendant');
+      highlightedIndex = -1;
+    }
+
+    function renderZeroState() {
+      if (!quickSearchDropdown || !quickSearchInput) return;
+      const dict = SMART_ST_DATA.i18n[state.currentLanguage] || SMART_ST_DATA.i18n.en;
+      const recents = getRecentSearches();
+      quickSearchDropdown.innerHTML = '';
+      highlightedIndex = -1;
+
+      // Section 1: Recent Searches (if any)
+      if (recents.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'search-section-header';
+        header.innerHTML = `
+          <span>${dict.recentSearches || 'Recent Searches'}</span>
+          <button type="button" class="search-header-clear" id="btn-clear-recent">${dict.clearRecent || 'Clear'}</button>
+        `;
+        quickSearchDropdown.appendChild(header);
+
+        const clearBtn = header.querySelector('#btn-clear-recent');
+        if (clearBtn) {
+          clearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearRecentSearches();
+            renderZeroState();
+          });
         }
 
-        // Search bus stops
-        const matchedStops = SMART_ST_DATA.busStops.filter(s => 
-          (s.name && s.name.toLowerCase().includes(query)) ||
-          (s.nameMr && s.nameMr.includes(query)) ||
-          (s.village && s.village.toLowerCase().includes(query)) ||
-          (s.taluka && s.taluka.toLowerCase().includes(query))
-        ).slice(0, 6);
-
-        // Search buses / routes
-        const matchedBuses = SMART_ST_DATA.buses.filter(b =>
-          (b.number && b.number.toLowerCase().includes(query)) ||
-          (b.routeName && b.routeName.toLowerCase().includes(query)) ||
-          (b.destination && b.destination.toLowerCase().includes(query)) ||
-          (b.type && b.type.toLowerCase().includes(query))
-        ).slice(0, 4);
-
-        if (matchedStops.length === 0 && matchedBuses.length === 0) {
-          quickSearchDropdown.innerHTML = '<div class="p-3 text-center text-sm" style="color:var(--text-secondary);">No stops or buses found for "' + query + '"</div>';
-          quickSearchDropdown.style.display = 'flex';
-          return;
-        }
-
-        quickSearchDropdown.innerHTML = '';
-
-        // Render Stops
-        matchedStops.forEach(stop => {
-          const item = document.createElement('div');
-          item.className = 'home-search-item';
-          item.innerHTML = `
-            <div>
-              <div style="font-weight: 700; font-size: 13px;">${getStopDisplayName(stop)}</div>
-              <div class="text-xs" style="color: var(--text-secondary);">${stop.taluka || 'Nashik'} • ${stop.qrCode || 'MSRTC'}</div>
+        recents.forEach((item, idx) => {
+          const el = document.createElement('div');
+          el.className = 'home-search-item';
+          el.setAttribute('role', 'option');
+          el.setAttribute('id', `search-recent-${idx}`);
+          el.innerHTML = `
+            <div class="search-item-left">
+              <div class="search-item-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <div class="search-item-text">
+                <div class="search-item-title">${item.label}</div>
+                <div class="search-item-meta">${item.meta || 'Recent Search'}</div>
+              </div>
             </div>
-            <span class="badge badge-blue">View Live</span>
+            <span class="text-xs" style="color: var(--apple-label-tertiary);">↵</span>
           `;
-          item.onclick = () => {
-            quickSearchDropdown.style.display = 'none';
-            quickSearchInput.value = '';
-            openLiveMapForStop(stop);
-          };
-          quickSearchDropdown.appendChild(item);
-        });
-
-        // Render Buses
-        matchedBuses.forEach(bus => {
-          const item = document.createElement('div');
-          item.className = 'home-search-item';
-          item.innerHTML = `
-            <div>
-              <div style="font-weight: 700; font-size: 13px;">${bus.number} (${bus.type})</div>
-              <div class="text-xs" style="color: var(--text-secondary);">${bus.routeName} • ETA: ${bus.etaMinutes}m</div>
-            </div>
-            <span class="badge badge-green">Track GPS</span>
-          `;
-          item.onclick = () => {
-            quickSearchDropdown.style.display = 'none';
-            quickSearchInput.value = '';
-            state.selectedBus = bus;
-            navigateTo('tracking-view', { busId: bus.id });
-          };
-          quickSearchDropdown.appendChild(item);
-        });
-
-        quickSearchDropdown.style.display = 'flex';
-      });
-
-      if (quickSearchBtn) {
-        quickSearchBtn.addEventListener('click', () => {
-          quickSearchInput.focus();
+          el.addEventListener('click', () => {
+            if (item.type === 'stop') {
+              const stop = SMART_ST_DATA.busStops.find(s => s.id === item.id);
+              if (stop) {
+                closeSearch();
+                openLiveMapForStop(stop);
+              }
+            } else if (item.type === 'bus') {
+              const bus = SMART_ST_DATA.buses.find(b => b.id === item.id);
+              if (bus) {
+                closeSearch();
+                state.selectedBus = bus;
+                navigateTo('tracking-view', { busId: bus.id });
+              }
+            }
+          });
+          quickSearchDropdown.appendChild(el);
         });
       }
 
+      // Section 2: Popular Stops (Apple Discovery pattern)
+      const popularStops = SMART_ST_DATA.busStops.filter(s => s.id === 'CBS-01' || s.id === 'YLA-01' || s.id === 'NPH-01');
+      if (popularStops.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'search-section-header';
+        header.innerHTML = `<span>${dict.popularStops || 'Popular Stops'}</span>`;
+        quickSearchDropdown.appendChild(header);
+
+        popularStops.forEach((stop, idx) => {
+          const el = document.createElement('div');
+          el.className = 'home-search-item';
+          el.setAttribute('role', 'option');
+          el.setAttribute('id', `search-pop-${idx}`);
+          el.innerHTML = `
+            <div class="search-item-left">
+              <div class="search-item-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--brand-red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                  <circle cx="12" cy="9" r="2.5"/>
+                </svg>
+              </div>
+              <div class="search-item-text">
+                <div class="search-item-title">${getStopDisplayName(stop)}</div>
+                <div class="search-item-meta">${stop.taluka || 'Nashik'} • ${stop.district || 'Nashik'}</div>
+              </div>
+            </div>
+            <span class="badge badge-blue">View Live</span>
+          `;
+          el.addEventListener('click', () => {
+            saveRecentSearch({
+              id: stop.id,
+              type: 'stop',
+              label: getStopDisplayName(stop),
+              meta: `${stop.taluka || 'Nashik'} • Stop`
+            });
+            closeSearch();
+            openLiveMapForStop(stop);
+          });
+          quickSearchDropdown.appendChild(el);
+        });
+      }
+
+      quickSearchDropdown.style.display = 'flex';
+      quickSearchInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function performSearch(query) {
+      if (!quickSearchDropdown || !quickSearchInput) return;
+      const dict = SMART_ST_DATA.i18n[state.currentLanguage] || SMART_ST_DATA.i18n.en;
+      highlightedIndex = -1;
+
+      if (!query) {
+        renderZeroState();
+        return;
+      }
+
+      // Filter Stops (by English name, Marathi nameMr, village, taluka, id, qrCode)
+      let matchedStops = [];
+      if (searchScope === 'all' || searchScope === 'stops') {
+        matchedStops = SMART_ST_DATA.busStops.filter(s =>
+          (s.name && s.name.toLowerCase().includes(query)) ||
+          (s.nameMr && s.nameMr.includes(query)) ||
+          (s.village && s.village.toLowerCase().includes(query)) ||
+          (s.taluka && s.taluka.toLowerCase().includes(query)) ||
+          (s.qrCode && s.qrCode.toLowerCase().includes(query)) ||
+          (s.id && s.id.toLowerCase().includes(query))
+        ).slice(0, 6);
+      }
+
+      // Filter Buses (by bus number, routeName, destination, type, id)
+      let matchedBuses = [];
+      if (searchScope === 'all' || searchScope === 'routes') {
+        matchedBuses = SMART_ST_DATA.buses.filter(b =>
+          (b.number && b.number.toLowerCase().includes(query)) ||
+          (b.routeName && b.routeName.toLowerCase().includes(query)) ||
+          (b.destination && b.destination.toLowerCase().includes(query)) ||
+          (b.type && b.type.toLowerCase().includes(query)) ||
+          (b.id && b.id.toLowerCase().includes(query))
+        ).slice(0, 5);
+      }
+
+      // If No Matches Found -> Apple Error/Empty Recovery State
+      if (matchedStops.length === 0 && matchedBuses.length === 0) {
+        quickSearchDropdown.innerHTML = `
+          <div class="search-empty-state">
+            <svg class="search-empty-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+            <div class="search-empty-title">${dict.noResultsFound || 'No stops or buses found for'} "${query}"</div>
+            <div class="search-empty-hint">${dict.tryDifferentSearch || 'Try searching by route name, stop code, or Marathi name.'}</div>
+          </div>
+        `;
+        quickSearchDropdown.style.display = 'flex';
+        quickSearchInput.setAttribute('aria-expanded', 'true');
+        return;
+      }
+
+      quickSearchDropdown.innerHTML = '';
+      let itemCounter = 0;
+
+      // Render Stops Section
+      if (matchedStops.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'search-section-header';
+        header.innerHTML = `<span>${dict.navStop || 'Bus Stops'} (${matchedStops.length})</span>`;
+        quickSearchDropdown.appendChild(header);
+
+        matchedStops.forEach(stop => {
+          const item = document.createElement('div');
+          item.className = 'home-search-item';
+          item.setAttribute('role', 'option');
+          item.setAttribute('id', `search-res-${itemCounter++}`);
+          item.innerHTML = `
+            <div class="search-item-left">
+              <div class="search-item-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--brand-red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                  <circle cx="12" cy="9" r="2.5"/>
+                </svg>
+              </div>
+              <div class="search-item-text">
+                <div class="search-item-title">${getStopDisplayName(stop)}</div>
+                <div class="search-item-meta">${stop.taluka || 'Nashik'} • Stop ${stop.id || ''}</div>
+              </div>
+            </div>
+            <span class="badge badge-blue">View Live</span>
+          `;
+          item.addEventListener('click', () => {
+            saveRecentSearch({
+              id: stop.id,
+              type: 'stop',
+              label: getStopDisplayName(stop),
+              meta: `${stop.taluka || 'Nashik'} • Stop`
+            });
+            closeSearch();
+            quickSearchInput.value = '';
+            updateClearBtnVisibility();
+            openLiveMapForStop(stop);
+          });
+          quickSearchDropdown.appendChild(item);
+        });
+      }
+
+      // Render Buses Section
+      if (matchedBuses.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'search-section-header';
+        header.innerHTML = `<span>${dict.navRoutes || 'Buses & Routes'} (${matchedBuses.length})</span>`;
+        quickSearchDropdown.appendChild(header);
+
+        matchedBuses.forEach(bus => {
+          const item = document.createElement('div');
+          item.className = 'home-search-item';
+          item.setAttribute('role', 'option');
+          item.setAttribute('id', `search-res-${itemCounter++}`);
+          item.innerHTML = `
+            <div class="search-item-left">
+              <div class="search-item-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--primary-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="14" rx="2"/>
+                  <path d="M7 18v2M17 18v2M3 10h18"/>
+                  <circle cx="7.5" cy="14.5" r="1"/>
+                  <circle cx="16.5" cy="14.5" r="1"/>
+                </svg>
+              </div>
+              <div class="search-item-text">
+                <div class="search-item-title">${bus.number} · <span style="color:var(--msrtc-crimson); font-weight:700;">${bus.type}</span></div>
+                <div class="search-item-meta">${bus.routeName} • ETA: ${bus.etaMinutes}m</div>
+              </div>
+            </div>
+            <span class="badge badge-green">Track GPS</span>
+          `;
+          item.addEventListener('click', () => {
+            saveRecentSearch({
+              id: bus.id,
+              type: 'bus',
+              label: `${bus.number} (${bus.type})`,
+              meta: `${bus.routeName}`
+            });
+            closeSearch();
+            quickSearchInput.value = '';
+            updateClearBtnVisibility();
+            state.selectedBus = bus;
+            navigateTo('tracking-view', { busId: bus.id });
+          });
+          quickSearchDropdown.appendChild(item);
+        });
+      }
+
+      quickSearchDropdown.style.display = 'flex';
+      quickSearchInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function updateHighlight(items) {
+      items.forEach((item, idx) => {
+        if (idx === highlightedIndex) {
+          item.classList.add('highlighted');
+          quickSearchInput.setAttribute('aria-activedescendant', item.id);
+          item.scrollIntoView({ block: 'nearest' });
+        } else {
+          item.classList.remove('highlighted');
+        }
+      });
+    }
+
+    if (quickSearchInput && quickSearchDropdown) {
+      quickSearchInput.addEventListener('focus', () => {
+        const query = quickSearchInput.value.trim().toLowerCase();
+        if (!query) {
+          renderZeroState();
+        } else {
+          performSearch(query);
+        }
+      });
+
+      quickSearchInput.addEventListener('input', (e) => {
+        updateClearBtnVisibility();
+        const query = e.target.value.trim().toLowerCase();
+        performSearch(query);
+      });
+
+      quickSearchInput.addEventListener('keydown', (e) => {
+        const items = Array.from(quickSearchDropdown.querySelectorAll('.home-search-item'));
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          highlightedIndex = (highlightedIndex + 1) % items.length;
+          updateHighlight(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          highlightedIndex = (highlightedIndex - 1 + items.length) % items.length;
+          updateHighlight(items);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (highlightedIndex >= 0 && items[highlightedIndex]) {
+            items[highlightedIndex].click();
+          } else if (items[0]) {
+            items[0].click();
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          closeSearch();
+          quickSearchInput.blur();
+        }
+      });
+
+      // Clear button click handler
+      if (quickSearchClearBtn) {
+        quickSearchClearBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          quickSearchInput.value = '';
+          updateClearBtnVisibility();
+          quickSearchInput.focus();
+          renderZeroState();
+        });
+      }
+
+      // Scope bar buttons click
+      if (scopeBar) {
+        scopeBar.querySelectorAll('.scope-pill').forEach(pill => {
+          pill.addEventListener('click', () => {
+            scopeBar.querySelectorAll('.scope-pill').forEach(p => {
+              p.classList.remove('active');
+              p.setAttribute('aria-selected', 'false');
+            });
+            pill.classList.add('active');
+            pill.setAttribute('aria-selected', 'true');
+            searchScope = pill.dataset.scope || 'all';
+            const query = quickSearchInput.value.trim().toLowerCase();
+            performSearch(query);
+          });
+        });
+      }
+
+      // Click outside to dismiss
       document.addEventListener('click', (e) => {
-        if (!quickSearchInput.contains(e.target) && !quickSearchDropdown.contains(e.target)) {
-          quickSearchDropdown.style.display = 'none';
+        const container = document.getElementById('home-search-container');
+        if (container && !container.contains(e.target)) {
+          closeSearch();
         }
       });
     }

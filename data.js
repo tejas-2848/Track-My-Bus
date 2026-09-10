@@ -119,7 +119,15 @@ const SMART_ST_DATA = {
       "hideStops": "Hide Stops",
       "viewLiveBuses": "Live Buses",
       "hideLiveBuses": "Hide Buses",
-      "trackLiveMap": "Track Route on Map"
+      "trackLiveMap": "Track Route on Map",
+      "trackYourBus": "Track your bus",
+      "searchSubtitle": "Search routes, stops or places across Maharashtra",
+      "filterAll": "All",
+      "recentSearches": "Recent Searches",
+      "clearRecent": "Clear",
+      "popularStops": "Popular Stops",
+      "noResultsFound": "No stops or buses found for",
+      "tryDifferentSearch": "Try searching by route name, stop code, or Marathi name."
     },
     "mr": {
       "appName": "माझी बस कुठे आहे?",
@@ -234,7 +242,15 @@ const SMART_ST_DATA = {
       "hideStops": "थांबे लपवा",
       "viewLiveBuses": "थेट बसेस",
       "hideLiveBuses": "बसेस लपवा",
-      "trackLiveMap": "नकाशावर मार्ग पहा"
+      "trackLiveMap": "नकाशावर मार्ग पहा",
+      "trackYourBus": "तुमची बस ट्रॅक करा",
+      "searchSubtitle": "महाराष्ट्रातील मार्ग, थांबे किंवा ठिकाणे शोधा",
+      "filterAll": "सर्व",
+      "recentSearches": "अलीकडील शोध",
+      "clearRecent": "साफ करा",
+      "popularStops": "लोकप्रिय थांबे",
+      "noResultsFound": "खालील शोधासाठी काहीही आढळले नाही",
+      "tryDifferentSearch": "मार्गाचे नाव, थांबा कोड किंवा मराठी नावाने शोधून पहा."
     },
     "hi": {
       "appName": "मेरी बस कहाँ है?",
@@ -349,7 +365,15 @@ const SMART_ST_DATA = {
       "hideStops": "स्टॉप छिपाएं",
       "viewLiveBuses": "लाइव बसें",
       "hideLiveBuses": "बसें छिपाएं",
-      "trackLiveMap": "मैप पर ट्रैक करें"
+      "trackLiveMap": "मैप पर ट्रैक करें",
+      "trackYourBus": "अपनी बस ट्रैक करें",
+      "searchSubtitle": "महाराष्ट्र भर के मार्ग, स्टॉप या स्थान खोजें",
+      "filterAll": "सभी",
+      "recentSearches": "हाल की खोजें",
+      "clearRecent": "हटाएं",
+      "popularStops": "लोकप्रिय स्टॉप",
+      "noResultsFound": "इसके लिए कोई स्टॉप या बस नहीं मिली",
+      "tryDifferentSearch": "मार्ग नाम, स्टॉप कोड या हिंदी नाम से खोजें।"
     }
   },
   "busStops": [

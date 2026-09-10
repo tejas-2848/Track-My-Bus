@@ -3045,7 +3045,7 @@ input:checked + .slider:before {
   letter-spacing: -0.1px;
 }
 
-/* 2. Apple iOS Search Field (Search-Fields.md HIG Standard) */
+/* 2. Apple iOS Search Field (Single Unified Surface) */
 .home-search-container {
   position: relative;
   width: 100%;
@@ -3055,36 +3055,41 @@ input:checked + .slider:before {
   display: flex;
   align-items: center;
   background: var(--apple-bg-secondary);
-  border: 0.5px solid var(--apple-separator);
-  border-radius: var(--radius-sm);
-  padding: 0 12px;
-  height: 44px; /* iOS Search Field Target */
-  box-shadow: var(--shadow-sm);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  border: 1px solid var(--apple-separator);
+  border-radius: 12px;
+  padding: 0 8px 0 14px;
+  height: 46px; /* iOS Touch Target Minimum */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
 }
 
 .home-search-input-wrap:focus-within {
-  border-color: var(--apple-tint);
-  box-shadow: 0 0 0 3px var(--apple-tint-subtle);
+  border-color: var(--apple-tint, #007AFF);
+  box-shadow: 0 0 0 3px var(--apple-tint-subtle, rgba(0, 122, 255, 0.15));
 }
 
 .home-search-icon {
   color: var(--apple-label-tertiary);
-  margin-right: 8px;
+  margin-right: 10px;
   display: flex;
   align-items: center;
   flex-shrink: 0;
 }
 
 .home-search-input {
-  border: none;
-  background: transparent;
-  outline: none;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
   width: 100%;
-  font-size: 15px;
+  font-size: 16px; /* Prevents auto-zoom on mobile Safari/iOS */
   font-weight: 400;
   color: var(--apple-label-primary);
   font-family: inherit;
+  caret-color: var(--apple-tint, #007AFF);
 }
 
 .home-search-input::placeholder {
@@ -3092,22 +3097,71 @@ input:checked + .slider:before {
   font-weight: 400;
 }
 
+.home-search-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  background: transparent;
+  border: none;
+  color: var(--apple-label-tertiary);
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 0;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.home-search-clear-btn:hover {
+  color: var(--apple-label-primary);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Apple Dropdown Suggestions Container */
 .home-search-dropdown {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   right: 0;
   background: var(--apple-bg-secondary);
-  border: 0.5px solid var(--apple-separator);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--apple-separator);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
   padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  z-index: 150;
-  max-height: 280px;
+  z-index: 200;
+  max-height: 320px;
   overflow-y: auto;
+}
+
+/* Apple Grouped Inset Section Headers */
+.search-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--apple-label-tertiary);
+}
+
+.search-header-clear {
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--apple-tint, #007AFF);
+  cursor: pointer;
+  padding: 0;
+}
+
+.search-header-clear:hover {
+  text-decoration: underline;
 }
 
 .home-search-item {
@@ -3115,13 +3169,94 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   cursor: pointer;
   transition: background var(--transition-fast);
 }
 
-.home-search-item:hover {
-  background: var(--apple-tint-subtle);
+.home-search-item:hover,
+.home-search-item.highlighted {
+  background: var(--apple-tint-subtle, rgba(0, 122, 255, 0.08));
+}
+
+.search-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--apple-label-secondary);
+  flex-shrink: 0;
+}
+
+.search-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--apple-label-primary);
+}
+
+.search-item-meta {
+  font-size: 12px;
+  color: var(--apple-label-secondary);
+}
+
+.search-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 16px;
+  gap: 8px;
+}
+
+.search-empty-icon {
+  color: var(--apple-label-tertiary);
+}
+
+.search-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--apple-label-primary);
+}
+
+.search-empty-hint {
+  font-size: 12px;
+  color: var(--apple-label-secondary);
+  max-width: 260px;
+}
+
+/* Dark Mode Overrides */
+body.dark-mode .home-search-input-wrap {
+  background: rgba(44, 44, 46, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark-mode .home-search-dropdown {
+  background: rgba(36, 36, 38, 0.95);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+body.dark-mode .search-item-icon {
+  background: rgba(255, 255, 255, 0.08);
+  color: #A1A1A6;
+}
+
+body.dark-mode .home-search-clear-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ==========================================================================
@@ -3655,23 +3790,6 @@ body.dark-mode .home-hero-subtitle {
   color: #94A3B8;
 }
 
-body.dark-mode .home-search-input-wrap {
-  background: var(--bg-elevated);
-  border-color: var(--border-subtle);
-}
-
-body.dark-mode .home-search-input {
-  color: #F8FAFC;
-}
-
-body.dark-mode .home-search-dropdown {
-  background: var(--bg-elevated);
-  border-color: var(--border-subtle);
-}
-
-body.dark-mode .home-search-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
 
 body.dark-mode .home-nearby-card {
   background: var(--bg-card);
@@ -4019,89 +4137,6 @@ body.dark-mode .header-lang-btn:hover {
 .header-lang-option:hover {
   background: rgba(59, 130, 246, 0.1);
   color: var(--primary-blue);
-}
-
-.home-search-container {
-  margin-top: 12px;
-  position: relative;
-}
-
-.home-search-input-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.home-search-input {
-  width: 100%;
-  padding: 12px 44px 12px 18px;
-  border-radius: 28px;
-  border: 1.5px solid #CBD5E1;
-  background: var(--bg-card);
-  color: var(--text-main);
-  font-size: 14px;
-  font-weight: 500;
-  outline: none;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.home-search-input:focus {
-  border-color: #0284C7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
-}
-
-body.dark-mode .home-search-input {
-  border-color: #334155;
-  background: var(--bg-card);
-}
-
-.home-search-icon-btn {
-  position: absolute;
-  right: 12px;
-  background: none;
-  border: none;
-  color: #0284C7;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.home-search-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  z-index: 90;
-  max-height: 260px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.home-search-item {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-subtle);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: background 0.15s;
-}
-
-.home-search-item:last-child {
-  border-bottom: none;
-}
-
-.home-search-item:hover {
-  background: rgba(59, 130, 246, 0.06);
 }
 
 .home-buttons-grid {
