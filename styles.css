@@ -134,7 +134,7 @@
   --font-sm: 12px;
 
   /* Layout */
-  --header-height: 56px;
+  --header-height: 60px;
   --nav-height: 64px;
   --max-content-width: 800px;
   --transition-fast: 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -342,51 +342,92 @@ html, body {
 .brand-section {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
   user-select: none;
 }
 
 .brand-logo-img {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 0;
   flex-shrink: 0;
   transition: transform var(--transition-fast);
 }
 
+body.dark-mode .brand-logo-img {
+  content: url("assets/logo-dark.jpg");
+}
+
 .brand-section:active .brand-logo-img {
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
 .brand-divider {
-  display: none; /* Apple designs avoid cluttering divider bars in navigation headers */
+  display: block;
+  width: 1.5px;
+  height: 34px;
+  background-color: #94A3B8;
+  opacity: 0.8;
+  border-radius: 1px;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), opacity var(--transition-fast);
+}
+
+body.dark-mode .brand-divider {
+  background-color: #64748B;
+  opacity: 0.9;
 }
 
 .brand-title {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .brand-title h1 {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--apple-label-primary);
+  font-size: 21px;
+  font-weight: 900;
+  color: #0F172A;
   line-height: 1.15;
   letter-spacing: -0.3px;
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  width: fit-content;
+  font-family: inherit;
+}
+
+body.dark-mode .brand-title h1 {
+  color: #FFFFFF;
 }
 
 .brand-accent {
-  color: var(--msrtc-crimson);
+  color: #E53935;
+  font-weight: 900;
 }
 
 .brand-tagline {
-  font-size: 11px; /* Minimum 11pt adhering strictly to Apple HIG Accessibility rules */
-  font-weight: 500;
-  color: var(--apple-label-secondary);
-  text-transform: none;
-  letter-spacing: -0.1px;
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #1E2430;
+  text-transform: uppercase;
+  letter-spacing: 1.25px;
+  line-height: 1.25;
+  margin: 0;
+  white-space: nowrap;
+  display: block;
+  text-align: center;
+  width: fit-content;
+}
+
+body.dark-mode .brand-tagline {
+  color: #CBD5E1;
 }
 
 .header-controls {
