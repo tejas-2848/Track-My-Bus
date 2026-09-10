@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     activeStop: null,
     hasUserSelectedStop: false,
     selectedBus: null,
+    userCoords: null,
+    isGpsActive: false,
     currentUser: (() => {
       try { return JSON.parse(localStorage.getItem('wmb_currentUser')) || null; } catch(e) { return null; }
     })(),
@@ -166,6 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAdminDashboardScreen();
     } else if (screenId === 'voice-view') {
       renderVoiceViewScreen();
+    } else if (screenId === 'nearby-stops-view') {
+      renderNearbyStopsScreen();
     }
   }
 
@@ -385,23 +389,11 @@ document.addEventListener('DOMContentLoaded', () => {
       matchedStop = SMART_ST_DATA.busStops[0];
     }
 
-    state.activeStop = matchedStop;
-    state.hasUserSelectedStop = true;
-    state.lastViewedStopId = matchedStop.id;
-    try { localStorage.setItem('wmb_last_viewed_stop', matchedStop.id); } catch(e) {}
-
-    // Auto-select bus servicing this stop
-    if (!state.selectedBus || !state.selectedBus.intermediateStops || !state.selectedBus.intermediateStops.some(s => s.name.toLowerCase() === matchedStop.name.toLowerCase())) {
-      const found = SMART_ST_DATA.buses.find(b => b.intermediateStops && b.intermediateStops.some(s => s.name.toLowerCase() === matchedStop.name.toLowerCase()));
-      if (found) state.selectedBus = found;
-      else if (!state.selectedBus) state.selectedBus = SMART_ST_DATA.buses[0];
-    }
-
     setTimeout(() => {
       if (scanFrame) scanFrame.classList.remove('scan-success');
       state.isQrProcessing = false;
       showToast(`🎉 QR Code Scanned: ${getStopDisplayName(matchedStop)}`);
-      navigateTo('tracking-view');
+      openLiveMapForStop(matchedStop);
     }, 400);
   }
 
@@ -554,23 +546,188 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function simulateQRScan(stopId) {
-    const targetStop = resolveStopObject(stopId) || SMART_ST_DATA.busStops.find(s => s.id === stopId) || SMART_ST_DATA.busStops[0];
+  // --------------------------------------------------------------------------
+  // UPCOMING BUS SELECTOR & LIVE MAP CONNECTOR
+  // --------------------------------------------------------------------------
+
+  function findBestUpcomingBusForStop(stop) {
+    if (!stop) return null;
+    const stopName = (stop.name || '').toLowerCase();
+    const stopMr = (stop.nameMr || '').trim();
+
+    const candidates = [];
+
+    SMART_ST_DATA.buses.forEach(b => {
+      if (!b.intermediateStops) return;
+
+      let stopIdx = b.intermediateStops.findIndex(s => {
+        if (s.name && s.name.toLowerCase() === stopName) return true;
+        if (s.nameMr && stopMr && s.nameMr.trim() === stopMr) return true;
+        if (s.lat && s.lng && stop.latitude && stop.longitude) {
+          return calculateDistanceKm(s.lat, s.lng, stop.latitude, stop.longitude) < 0.8;
+        }
+        return false;
+      });
+
+      if (stopIdx === -1) return;
+
+      let targetIdx = b.intermediateStops.findIndex(s => s.isCurrentTarget);
+      if (targetIdx === -1) {
+        targetIdx = b.intermediateStops.findIndex(s => s.status !== 'Departed');
+      }
+
+      const isPassed = (targetIdx === -1) || (targetIdx > stopIdx);
+
+      // Realistic ETA in minutes to this stop
+      let etaMins = 0;
+      let distKm = 0;
+      if (stop.latitude && stop.longitude && b.currentLat && b.currentLng) {
+        distKm = calculateDistanceKm(b.currentLat, b.currentLng, stop.latitude, stop.longitude);
+        const stopsBetween = Math.max(0, stopIdx - Math.max(0, targetIdx));
+        etaMins = Math.max(2, Math.round((distKm / 38) * 60 + stopsBetween * 2 + (b.delayMinutes || 0)));
+      } else {
+        etaMins = b.etaMinutes || 15;
+      }
+
+      candidates.push({
+        bus: b,
+        stopIdx,
+        targetIdx,
+        isPassed,
+        isUpcoming: !isPassed,
+        etaMins,
+        distKm
+      });
+    });
+
+    if (candidates.length === 0) return null;
+
+    const upcoming = candidates.filter(c => c.isUpcoming);
+
+    if (upcoming.length > 0) {
+      upcoming.sort((a, b) => a.etaMins - b.etaMins);
+      return {
+        bus: upcoming[0].bus,
+        etaMinutes: upcoming[0].etaMins,
+        distanceKm: upcoming[0].distKm,
+        isPassed: false,
+        upcomingCandidates: upcoming.map(u => u.bus)
+      };
+    }
+
+    candidates.sort((a, b) => a.targetIdx - b.targetIdx);
+    return {
+      bus: candidates[0].bus,
+      etaMinutes: candidates[0].etaMins,
+      distanceKm: candidates[0].distKm,
+      isPassed: true,
+      upcomingCandidates: []
+    };
+  }
+
+  function openLiveMapForStop(stop) {
+    const targetStop = resolveStopObject(stop.id || stop.name) || stop;
     state.activeStop = targetStop;
     state.hasUserSelectedStop = true;
     state.lastViewedStopId = targetStop.id;
     try { localStorage.setItem('wmb_last_viewed_stop', targetStop.id); } catch(e) {}
-    
-    // Auto-select bus servicing this stop
-    if (!state.selectedBus || !state.selectedBus.intermediateStops || !state.selectedBus.intermediateStops.some(s => s.name.toLowerCase() === targetStop.name.toLowerCase())) {
-      const found = SMART_ST_DATA.buses.find(b => b.intermediateStops && b.intermediateStops.some(s => s.name.toLowerCase() === targetStop.name.toLowerCase()));
-      if (found) state.selectedBus = found;
-      else if (!state.selectedBus) state.selectedBus = SMART_ST_DATA.buses[0];
+
+    // Automatically select the next UPCOMING bus for this stop
+    const upcomingResult = findBestUpcomingBusForStop(targetStop);
+    if (upcomingResult && upcomingResult.bus) {
+      state.selectedBus = upcomingResult.bus;
+      if (!upcomingResult.isPassed) {
+        showToast(`🚏 ${getStopDisplayName(targetStop)}: Next bus arriving in ${upcomingResult.etaMinutes}m`);
+      } else {
+        showToast(`🚏 Connected to ${getStopDisplayName(targetStop)}`);
+      }
+    } else {
+      state.selectedBus = SMART_ST_DATA.buses[0];
+      showToast(`🚏 Connected to ${getStopDisplayName(targetStop)}`);
     }
 
+    navigateTo('tracking-view', { busId: state.selectedBus.id });
+  }
+
+  function requestUserGpsLocation(onSuccess, onError) {
+    if (!navigator.geolocation) {
+      if (onError) onError(new Error('Geolocation not supported'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        state.userCoords = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        };
+        state.isGpsActive = true;
+        if (onSuccess) onSuccess(pos);
+      },
+      err => {
+        state.isGpsActive = false;
+        if (onError) onError(err);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  function getSortedNearbyStops(limit = 6) {
+    let userLat = state.userCoords ? state.userCoords.lat : null;
+    let userLng = state.userCoords ? state.userCoords.lng : null;
+
+    if (!userLat || !userLng) {
+      if (state.activeStop && state.activeStop.latitude && state.activeStop.longitude) {
+        userLat = state.activeStop.latitude;
+        userLng = state.activeStop.longitude;
+      } else {
+        userLat = 19.9975; // Nashik CBS
+        userLng = 73.7898;
+      }
+    }
+
+    const candidatesMap = new Map();
+    SMART_ST_DATA.busStops.forEach(s => candidatesMap.set(s.name, s));
+
+    if (SMART_ST_DATA.buses) {
+      SMART_ST_DATA.buses.forEach(b => {
+        if (b.intermediateStops) {
+          b.intermediateStops.forEach(st => {
+            if (st.lat && st.lng && !candidatesMap.has(st.name)) {
+              candidatesMap.set(st.name, {
+                id: `ST-${st.roadIndex || 1}`,
+                name: st.name,
+                nameMr: st.nameMr || st.name,
+                latitude: st.lat,
+                longitude: st.lng,
+                landmark: b.routeName
+              });
+            }
+          });
+        }
+      });
+    }
+
+    const stopList = Array.from(candidatesMap.values()).map(st => {
+      const d = calculateDistanceKm(userLat, userLng, st.latitude, st.longitude);
+      const upcomingResult = findBestUpcomingBusForStop(st);
+      return {
+        stop: st,
+        distKm: d,
+        upcomingBus: upcomingResult ? upcomingResult.bus : null,
+        etaMinutes: upcomingResult ? upcomingResult.etaMinutes : null,
+        isUpcoming: upcomingResult ? !upcomingResult.isPassed : false
+      };
+    });
+
+    stopList.sort((a, b) => a.distKm - b.distKm);
+    return stopList.slice(0, limit);
+  }
+
+  function simulateQRScan(stopId) {
+    const targetStop = resolveStopObject(stopId) || SMART_ST_DATA.busStops.find(s => s.id === stopId) || SMART_ST_DATA.busStops[0];
     playScanSuccessBeep();
-    showToast(`QR Scanned! Connected to ${getStopDisplayName(targetStop)}`);
-    navigateTo('tracking-view');
+    openLiveMapForStop(targetStop);
   }
 
   // --------------------------------------------------------------------------
@@ -636,60 +793,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('nearby-stops-container');
     if (!container) return;
 
-    // Use passed coordinates, user location if available, active stop, or default Niphad
-    let userLat = customLat;
-    let userLng = customLng;
-    if (!userLat || !userLng) {
-      if (state.activeStop && state.activeStop.latitude && state.activeStop.longitude) {
-        userLat = state.activeStop.latitude;
-        userLng = state.activeStop.longitude;
-      } else {
-        userLat = 19.9975; // Central Bus Stand, Nashik
-        userLng = 73.7898;
-      }
+    if (customLat && customLng) {
+      state.userCoords = { lat: customLat, lng: customLng, accuracy: 15 };
+      state.isGpsActive = true;
     }
 
-    // Collect all candidate stops with unique names
-    const candidatesMap = new Map();
-    SMART_ST_DATA.busStops.forEach(s => candidatesMap.set(s.name, s));
-
-    // Also include corridor stops with valid lat/lng
-    if (SMART_ST_DATA.buses) {
-      SMART_ST_DATA.buses.forEach(b => {
-        if (b.intermediateStops) {
-          b.intermediateStops.forEach(st => {
-            if (st.lat && st.lng && !candidatesMap.has(st.name)) {
-              candidatesMap.set(st.name, {
-                id: `ST-${st.roadIndex || 1}`,
-                name: st.name,
-                nameMr: st.nameMr || st.name,
-                latitude: st.lat,
-                longitude: st.lng,
-                landmark: b.routeName
-              });
-            }
-          });
-        }
-      });
-    }
-
-    const stopList = Array.from(candidatesMap.values()).map(st => {
-      const d = calculateDistanceKm(userLat, userLng, st.latitude, st.longitude);
-      return { stop: st, distKm: d };
-    });
-
-    // Sort by distance ascending
-    stopList.sort((a, b) => a.distKm - b.distKm);
-
-    // Pick top 4 closest stops
-    const nearby = stopList.slice(0, 4);
+    const nearby = getSortedNearbyStops(6);
 
     container.innerHTML = '';
     nearby.forEach(item => {
       const st = item.stop;
       const dKm = item.distKm;
       const distStr = dKm < 1 ? `${Math.round(dKm * 1000)} m` : `${dKm.toFixed(1)} km`;
-      const walkMins = Math.max(1, Math.round(dKm * 12)); // ~5 km/h walking speed
+      const walkMins = Math.max(1, Math.round(dKm * 12));
+      const upBus = item.upcomingBus;
+
+      let upBusBadge = '';
+      if (upBus && item.isUpcoming) {
+        upBusBadge = `<div class="text-xs text-green font-bold mt-1">⚡ Next: ${upBus.number} (${item.etaMinutes}m)</div>`;
+      }
 
       const card = document.createElement('div');
       card.className = 'nearby-stop-card';
@@ -697,24 +819,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       card.innerHTML = `
         <div class="nearby-stop-icon">🚏</div>
-        <div class="nearby-stop-info">
+        <div class="nearby-stop-info" style="flex: 1;">
           <div class="nearby-stop-name">${getStopDisplayName(st)}</div>
           <div class="nearby-stop-meta">
             <span class="nearby-dist-pill">📍 ${distStr} away</span>
             <span class="nearby-walk-pill">🚶 ~${walkMins} min walk</span>
           </div>
+          ${upBusBadge}
         </div>
         <button class="btn btn-sm btn-primary btn-select-nearby-stop" type="button" style="padding: 6px 12px; font-size: 12px; font-weight: 700;">
-          Select
+          Live Map ➔
         </button>
       `;
 
       card.addEventListener('click', () => {
-        const resolved = resolveStopObject(st.id || st.name) || st;
-        state.activeStop = resolved;
-        state.hasUserSelectedStop = true;
-        showToast(`🎉 Connected to ${resolved.name}`);
-        openLiveMapForStop(resolved);
+        openLiveMapForStop(st);
       });
 
       container.appendChild(card);
@@ -722,7 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setupNearbyStopsFeature() {
-    // Locate Me GPS Button
+    // Locate Me GPS Button in Scanner
     const btnLocate = document.getElementById('btn-detect-gps-stops');
     const statusEl = document.getElementById('nearby-gps-status');
 
@@ -731,27 +850,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusEl) statusEl.textContent = '● Locating with GPS...';
         showToast('Acquiring live GPS coordinates...');
 
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            pos => {
-              const lat = pos.coords.latitude;
-              const lng = pos.coords.longitude;
-              if (statusEl) statusEl.textContent = `● GPS Located (±${Math.round(pos.coords.accuracy)}m)`;
-              renderNearbyBusStops(lat, lng);
-              showToast('Updated nearby stops based on your location!');
-            },
-            err => {
-              console.warn('[WMB] Geolocation error:', err);
-              if (statusEl) statusEl.textContent = '● Regional Transit Network';
-              renderNearbyBusStops();
-              showToast('Location permission denied or unavailable. Showing regional stops.');
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-          );
-        } else {
-          if (statusEl) statusEl.textContent = '● Regional Transit Network';
-          renderNearbyBusStops();
-        }
+        requestUserGpsLocation(
+          pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            if (statusEl) statusEl.textContent = `● GPS Located (±${Math.round(pos.coords.accuracy)}m)`;
+            renderNearbyBusStops(lat, lng);
+            renderHomeNearbyStopCard();
+            renderPortalNearbyStopsList();
+            showToast('Updated nearby stops based on your location!');
+          },
+          err => {
+            console.warn('[WMB] Geolocation error:', err);
+            if (statusEl) statusEl.textContent = '● Regional Transit Network';
+            renderNearbyBusStops();
+            renderHomeNearbyStopCard();
+            showToast('Location permission denied or unavailable. Showing regional stops.');
+          }
+        );
       });
     }
   }
@@ -778,6 +894,431 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHomeFavoritesList();
     renderHomeServiceStatus();
     renderHomeReportsPreview();
+
+    // 4. Dynamic Live Nearby Bus Stop Card
+    renderHomeNearbyStopCard();
+  }
+
+  function renderHomeNearbyStopCard() {
+    const card = document.getElementById('home-nearby-card');
+    if (!card) return;
+
+    // Get closest stop from user's GPS position
+    const sortedStops = getSortedNearbyStops(1);
+    if (sortedStops.length === 0) return;
+
+    const closest = sortedStops[0];
+    const st = closest.stop;
+    const distKm = closest.distKm;
+    const distStr = distKm < 1 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`;
+    const upcomingBus = closest.upcomingBus;
+
+    const nameEl = document.getElementById('home-nearby-stop-name');
+    const distEl = document.getElementById('home-nearby-stop-dist');
+    const busTypeEl = document.getElementById('home-nearby-bus-type');
+    const busDestEl = document.getElementById('home-nearby-bus-dest');
+    const etaEl = document.getElementById('home-nearby-eta');
+    const busBox = document.getElementById('home-nearby-bus-box');
+
+    if (nameEl) nameEl.textContent = getStopDisplayName(st);
+    if (distEl) distEl.textContent = state.isGpsActive ? `📍 ${distStr} • Live GPS` : `📍 ${distStr}`;
+
+    if (upcomingBus) {
+      if (busTypeEl) busTypeEl.textContent = upcomingBus.type.split('(')[0].trim();
+      if (busDestEl) busDestEl.textContent = `Towards ${getBusDestination(upcomingBus)}`;
+      if (etaEl) etaEl.textContent = `${closest.etaMinutes} min`;
+    } else {
+      if (busTypeEl) busTypeEl.textContent = 'MSRTC Bus';
+      if (busDestEl) busDestEl.textContent = 'Towards Next Station';
+      if (etaEl) etaEl.textContent = 'Soon';
+    }
+
+    // Clicking card or bus box opens live map for this stop
+    card.onclick = (e) => {
+      if (e.target.closest('#btn-home-nearby-view-all')) return;
+      openLiveMapForStop(st);
+    };
+
+    if (busBox) {
+      busBox.onclick = (e) => {
+        e.stopPropagation();
+        openLiveMapForStop(st);
+      };
+    }
+
+    const viewAllBtn = document.getElementById('btn-home-nearby-view-all');
+    if (viewAllBtn) {
+      viewAllBtn.onclick = (e) => {
+        e.stopPropagation();
+        navigateTo('nearby-stops-view');
+      };
+    }
+  }
+
+  function renderPortalNearbyStopsList() {
+    const container = document.getElementById('portal-nearby-stops-list');
+    if (!container) return;
+
+    const statusEl = document.getElementById('portal-nearby-gps-status');
+    if (statusEl) {
+      if (state.isGpsActive && state.userCoords) {
+        statusEl.textContent = `● Live GPS (±${Math.round(state.userCoords.accuracy || 10)}m)`;
+        statusEl.style.color = 'var(--status-green)';
+      } else {
+        statusEl.textContent = '● Regional Transit Network';
+        statusEl.style.color = 'var(--text-secondary)';
+      }
+    }
+
+    const sortedStops = getSortedNearbyStops(6);
+    container.innerHTML = '';
+
+    if (sortedStops.length === 0) {
+      container.innerHTML = '<div class="text-sm text-center p-3 text-secondary">No nearby bus stops found.</div>';
+      return;
+    }
+
+    sortedStops.forEach(item => {
+      const st = item.stop;
+      const dKm = item.distKm;
+      const distStr = dKm < 1 ? `${Math.round(dKm * 1000)} m away` : `${dKm.toFixed(1)} km away`;
+      const walkMins = Math.max(1, Math.round(dKm * 12));
+      const upBus = item.upcomingBus;
+
+      const card = document.createElement('div');
+      card.className = 'nearby-stop-card';
+      card.setAttribute('data-stop-id', st.id || st.name);
+
+      let nextBusHtml = '';
+      if (upBus && item.isUpcoming) {
+        nextBusHtml = `<div class="text-xs text-green font-bold mt-1">⚡ Next: ${upBus.number} to ${getBusDestination(upBus)} in ${item.etaMinutes}m</div>`;
+      } else if (upBus) {
+        nextBusHtml = `<div class="text-xs text-secondary mt-1">Bus ${upBus.number} (Scheduled)</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="nearby-stop-icon">🚏</div>
+        <div class="nearby-stop-info" style="flex: 1;">
+          <div class="nearby-stop-name">${getStopDisplayName(st)}</div>
+          <div class="nearby-stop-meta">
+            <span class="nearby-dist-pill">📍 ${distStr}</span>
+            <span class="nearby-walk-pill">🚶 ~${walkMins} min walk</span>
+          </div>
+          ${nextBusHtml}
+        </div>
+        <button class="btn btn-sm btn-primary btn-select-nearby-stop" type="button" style="padding: 6px 12px; font-size: 12px; font-weight: 700; white-space: nowrap;">
+          Live Map ➔
+        </button>
+      `;
+
+      card.onclick = () => {
+        closeModal('nearby-stops-modal');
+        openLiveMapForStop(st);
+      };
+
+      container.appendChild(card);
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Dedicated Nearby Bus Stops Screen (Live GPS Precision & Arrivals)
+  // --------------------------------------------------------------------------
+
+  const nearbyPageState = {
+    selectedRadius: 'all',
+    searchQuery: '',
+    isInitialized: false
+  };
+
+  function setupNearbyStopsScreen() {
+    if (nearbyPageState.isInitialized) return;
+    nearbyPageState.isInitialized = true;
+
+    const searchInput = document.getElementById('nearby-page-search-input');
+    const clearBtn = document.getElementById('btn-clear-nearby-search');
+    const refreshBtn = document.getElementById('btn-nearby-page-refresh');
+    const radiusPillsContainer = document.getElementById('nearby-radius-pills');
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        nearbyPageState.searchQuery = (e.target.value || '').trim().toLowerCase();
+        if (clearBtn) {
+          clearBtn.style.display = nearbyPageState.searchQuery ? 'block' : 'none';
+        }
+        renderNearbyStopsCards();
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        nearbyPageState.searchQuery = '';
+        clearBtn.style.display = 'none';
+        renderNearbyStopsCards();
+      });
+    }
+
+    if (radiusPillsContainer) {
+      radiusPillsContainer.addEventListener('click', (e) => {
+        const pill = e.target.closest('.nearby-radius-pill');
+        if (!pill) return;
+        radiusPillsContainer.querySelectorAll('.nearby-radius-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        nearbyPageState.selectedRadius = pill.dataset.radius || 'all';
+        renderNearbyStopsCards();
+      });
+    }
+
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        showToast('Acquiring live GPS coordinates...');
+        refreshBtn.disabled = true;
+        refreshBtn.style.opacity = '0.6';
+        requestUserGpsLocation(
+          pos => {
+            refreshBtn.disabled = false;
+            refreshBtn.style.opacity = '1';
+            showToast('📍 Updated nearby stops with live GPS location!');
+            renderNearbyStopsScreen();
+            renderHomeNearbyStopCard();
+          },
+          err => {
+            refreshBtn.disabled = false;
+            refreshBtn.style.opacity = '1';
+            showToast('Could not acquire GPS coordinates. Showing regional stops.');
+            renderNearbyStopsScreen();
+          }
+        );
+      });
+    }
+  }
+
+  function renderNearbyStopsScreen() {
+    setupNearbyStopsScreen();
+
+    // Update GPS status banner
+    const gpsStatusEl = document.getElementById('nearby-page-gps-status');
+    if (gpsStatusEl) {
+      if (state.isGpsActive && state.userCoords) {
+        gpsStatusEl.textContent = `● Live GPS (±${Math.round(state.userCoords.accuracy || 10)}m)`;
+        gpsStatusEl.classList.add('gps-active');
+      } else {
+        gpsStatusEl.textContent = `● Regional Network`;
+        gpsStatusEl.classList.remove('gps-active');
+      }
+    }
+
+    renderNearbyStopsCards();
+  }
+
+  function renderNearbyStopsCards() {
+    const container = document.getElementById('nearby-page-cards-container');
+    if (!container) return;
+
+    // Fetch all stops sorted by GPS distance
+    const sortedStops = getSortedNearbyStops(50);
+    const q = nearbyPageState.searchQuery;
+    const rad = nearbyPageState.selectedRadius;
+
+    // Filter by radius & search query
+    const filteredStops = sortedStops.filter(item => {
+      const st = item.stop;
+      const dKm = item.distKm;
+
+      // Radius filter
+      if (rad !== 'all') {
+        const maxDist = parseFloat(rad);
+        if (!isNaN(maxDist) && dKm > maxDist) return false;
+      }
+
+      // Query filter
+      if (q) {
+        const nameMatch = (st.name || '').toLowerCase().includes(q);
+        const nameMrMatch = (st.nameMr || '').toLowerCase().includes(q);
+        const idMatch = (st.id || '').toLowerCase().includes(q);
+        const busMatch = item.upcomingBus && (
+          (item.upcomingBus.to || '').toLowerCase().includes(q) ||
+          (item.upcomingBus.number || '').toLowerCase().includes(q)
+        );
+        if (!nameMatch && !nameMrMatch && !idMatch && !busMatch) return false;
+      }
+
+      return true;
+    });
+
+    // Narrow down to 6 nearest stops
+    const displayStops = filteredStops.slice(0, 6);
+
+    // Update Stats Bar
+    const statCount = document.getElementById('nearby-stat-count');
+    const statNearest = document.getElementById('nearby-stat-nearest');
+    const statWalking = document.getElementById('nearby-stat-walking');
+
+    if (statCount) statCount.textContent = displayStops.length;
+    if (statNearest) {
+      if (displayStops.length > 0) {
+        const d = displayStops[0].distKm;
+        statNearest.textContent = d < 1 ? `${Math.round(d * 1000)} m` : `${d.toFixed(1)} km`;
+      } else {
+        statNearest.textContent = '--';
+      }
+    }
+    if (statWalking) {
+      if (displayStops.length > 0) {
+        const wMin = Math.max(1, Math.round(displayStops[0].distKm * 12));
+        statWalking.textContent = `~${wMin} min`;
+      } else {
+        statWalking.textContent = '--';
+      }
+    }
+
+    // Render Cards
+    container.innerHTML = '';
+
+    if (displayStops.length === 0) {
+      container.innerHTML = `
+        <div class="card nearby-empty-card">
+          <div class="nearby-empty-icon">🔍</div>
+          <h4 class="nearby-empty-title">No bus stops found</h4>
+          <p class="nearby-empty-text">
+            ${q ? `No stops matching "<strong>${q}</strong>" within ${rad === 'all' ? 'the active network' : rad + ' km'}.` : 'No stops found within selected radius.'}
+          </p>
+          <button class="btn btn-secondary btn-sm" id="btn-nearby-reset-filters" type="button">
+            Reset Filters
+          </button>
+        </div>
+      `;
+      const resetBtn = document.getElementById('btn-nearby-reset-filters');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+          const searchInput = document.getElementById('nearby-page-search-input');
+          if (searchInput) searchInput.value = '';
+          nearbyPageState.searchQuery = '';
+          nearbyPageState.selectedRadius = 'all';
+          const pills = document.getElementById('nearby-radius-pills');
+          if (pills) {
+            pills.querySelectorAll('.nearby-radius-pill').forEach(p => {
+              p.classList.toggle('active', p.dataset.radius === 'all');
+            });
+          }
+          const clearBtn = document.getElementById('btn-clear-nearby-search');
+          if (clearBtn) clearBtn.style.display = 'none';
+          renderNearbyStopsCards();
+        });
+      }
+      return;
+    }
+
+    displayStops.forEach(item => {
+      const st = item.stop;
+      const dKm = item.distKm;
+      const distStr = dKm < 1 ? `${Math.round(dKm * 1000)} m away` : `${dKm.toFixed(1)} km away`;
+      const walkMins = Math.max(1, Math.round(dKm * 12));
+      const upBus = item.upcomingBus;
+
+      const card = document.createElement('div');
+      card.className = 'card nearby-stop-rich-card';
+      card.setAttribute('data-stop-id', st.id || st.name);
+
+      let upcomingHtml = '';
+      if (upBus && item.isUpcoming) {
+        const busDest = getBusDestination(upBus);
+        upcomingHtml = `
+          <div class="nearby-card-bus-preview">
+            <div class="nearby-preview-left">
+              <div class="nearby-preview-badge">
+                <span class="pulse-dot"></span>
+                <span>${upBus.type || 'Ordinary'} • ${upBus.number || upBus.id}</span>
+              </div>
+              <div class="nearby-preview-dest">
+                <span class="nearby-preview-arrow">➔</span> Towards <strong>${busDest}</strong>
+              </div>
+            </div>
+            <div class="nearby-preview-right">
+              <span class="nearby-preview-eta">🟢 ${item.etaMinutes} min</span>
+              <span class="nearby-preview-status">On Time</span>
+            </div>
+          </div>
+        `;
+      } else if (upBus) {
+        upcomingHtml = `
+          <div class="nearby-card-bus-preview scheduled">
+            <div class="nearby-preview-left">
+              <div class="nearby-preview-badge secondary">
+                <span>${upBus.type || 'Ordinary'} • ${upBus.number || upBus.id}</span>
+              </div>
+              <div class="nearby-preview-dest">
+                Towards <strong>${getBusDestination(upBus)}</strong>
+              </div>
+            </div>
+            <div class="nearby-preview-right">
+              <span class="nearby-preview-eta secondary">Scheduled</span>
+            </div>
+          </div>
+        `;
+      } else {
+        upcomingHtml = `
+          <div class="nearby-card-bus-preview empty">
+            <div class="nearby-preview-empty-text">⚪ No active buses currently scheduled</div>
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="nearby-card-header">
+          <div class="nearby-card-title-group">
+            <div class="nearby-card-icon-stop">🚏</div>
+            <div>
+              <div class="flex-align gap-2">
+                <h3 class="nearby-card-title">${getStopDisplayName(st)}</h3>
+                <span class="nearby-card-code-pill">${st.id || 'ST'}</span>
+              </div>
+              ${st.nameMr ? `<div class="nearby-card-marathi">${st.nameMr}</div>` : ''}
+            </div>
+          </div>
+          <div class="nearby-card-distance-box">
+            <span class="nearby-card-dist-pill">📍 ${distStr}</span>
+            <span class="nearby-card-walk-pill">🚶 ~${walkMins} min</span>
+          </div>
+        </div>
+
+        ${upcomingHtml}
+
+        <div class="nearby-card-footer">
+          <button class="btn btn-primary btn-sm btn-nearby-live-map" type="button">
+            🗺️ Live Map ➔
+          </button>
+          <button class="btn btn-secondary btn-sm btn-nearby-timetable" type="button">
+            📅 Routes & Times
+          </button>
+        </div>
+      `;
+
+      // Live map button & card click: openLiveMapForStop
+      const liveMapBtn = card.querySelector('.btn-nearby-live-map');
+      if (liveMapBtn) {
+        liveMapBtn.onclick = (e) => {
+          e.stopPropagation();
+          openLiveMapForStop(st);
+        };
+      }
+
+      const timetableBtn = card.querySelector('.btn-nearby-timetable');
+      if (timetableBtn) {
+        timetableBtn.onclick = (e) => {
+          e.stopPropagation();
+          state.activeStop = st;
+          state.hasUserSelectedStop = true;
+          navigateTo('routes-view');
+        };
+      }
+
+      card.onclick = () => {
+        openLiveMapForStop(st);
+      };
+
+      container.appendChild(card);
+    });
   }
 
   function renderPortalFavoritesList() {
@@ -822,12 +1363,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       item.querySelector('.btn-fav-go').onclick = () => {
         closeModal('home-favorites-modal');
-        state.activeStop = stop;
-        state.hasUserSelectedStop = true;
-        state.lastViewedStopId = stop.id;
-        try { localStorage.setItem('wmb_last_viewed_stop', stop.id); } catch(e) {}
-        if (!state.selectedBus) state.selectedBus = bus || SMART_ST_DATA.buses[0];
-        navigateTo('tracking-view');
+        openLiveMapForStop(stop);
       };
 
       item.querySelector('.btn-fav-del').onclick = () => {
@@ -1759,12 +2295,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Filter to ONLY buses running on the SAME corridor route
     const sameRouteBuses = SMART_ST_DATA.buses.filter(b => b.routeId === currentRouteId);
-    const busesToShow = sameRouteBuses.length > 0 ? sameRouteBuses : (currentBus ? [currentBus] : SMART_ST_DATA.buses.slice(0, 3));
+    const candidateBuses = sameRouteBuses.length > 0 ? sameRouteBuses : (currentBus ? [currentBus] : SMART_ST_DATA.buses.slice(0, 3));
 
-    busesToShow.forEach(b => {
-      const isSelected = currentBus ? (b.id === currentBus.id) : false;
-
-      // Locate user stop in this bus's intermediate stops
+    // Map each bus with pass/upcoming status
+    const mappedBuses = candidateBuses.map(b => {
       let userStopIdx = -1;
       if (b.intermediateStops && userStop) {
         userStopIdx = b.intermediateStops.findIndex(st => {
@@ -1776,7 +2310,6 @@ document.addEventListener('DOMContentLoaded', () => {
           return false;
         });
 
-        // If not exact match, check nearest stop along the corridor within 8km
         if (userStopIdx === -1 && userStop.latitude && userStop.longitude) {
           let minD = Infinity, closestIdx = -1;
           b.intermediateStops.forEach((st, idx) => {
@@ -1791,7 +2324,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Determine bus current target approaching stop index
       let targetStopIdx = -1;
       if (b.intermediateStops) {
         targetStopIdx = b.intermediateStops.findIndex(st => st.isCurrentTarget);
@@ -1800,21 +2332,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Check whether this bus has already covered/passed commuter's stop
       let isPassed = false;
       if (userStopIdx !== -1) {
         if (targetStopIdx === -1) {
-          isPassed = true; // Route fully completed
+          isPassed = true;
         } else if (targetStopIdx > userStopIdx) {
-          isPassed = true; // Bus is targeting a stop past user's stop -> passed!
+          isPassed = true;
         } else {
-          isPassed = false; // Bus hasn't reached user's stop yet -> upcoming!
+          isPassed = false;
         }
       } else {
-        // Fallback if stop is off-route
         const mid = b.intermediateStops ? Math.floor(b.intermediateStops.length / 2) : 10;
         isPassed = targetStopIdx > mid;
       }
+
+      return { bus: b, isPassed };
+    });
+
+    // Sort so UPCOMING buses are shown first!
+    mappedBuses.sort((a, b) => {
+      if (a.isPassed !== b.isPassed) return a.isPassed ? 1 : -1;
+      return 0;
+    });
+
+    mappedBuses.forEach(item => {
+      const b = item.bus;
+      const isPassed = item.isPassed;
+      const isSelected = currentBus ? (b.id === currentBus.id) : false;
 
       const chip = document.createElement('button');
       const statusClass = isPassed ? 'chip-passed' : 'chip-upcoming';
@@ -2943,7 +3487,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const newReport = {
         id: `REP-${Date.now()}`,
-        stopId: state.activeStop.id,
+        stopId: state.activeStop ? state.activeStop.id : (SMART_ST_DATA.busStops[0] ? SMART_ST_DATA.busStops[0].id : 'NPH-01'),
         type: val,
         title: note,
         reporter: "Commuter Passenger",
@@ -3206,8 +3750,24 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNearbyStopsFeature();
     setupStopSearch();
     setupRoutesScreen();
+    setupNearbyStopsScreen();
     setupNetworkStatus();
     setupHomeFeatures();
+    setupAccessibilityControls();
+
+    // Trigger initial high-accuracy GPS check
+    requestUserGpsLocation(
+      pos => {
+        renderHomeNearbyStopCard();
+        renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
+        if (state.currentScreen === 'nearby-stops-view') {
+          renderNearbyStopsScreen();
+        }
+      },
+      err => {
+        // Quiet fallback
+      }
+    );
   }
 
   function setupHomeFeatures() {
@@ -3570,16 +4130,7 @@ document.addEventListener('DOMContentLoaded', () => {
           item.onclick = () => {
             quickSearchDropdown.style.display = 'none';
             quickSearchInput.value = '';
-            state.activeStop = stop;
-            state.hasUserSelectedStop = true;
-            state.lastViewedStopId = stop.id;
-            try { localStorage.setItem('wmb_last_viewed_stop', stop.id); } catch(err) {}
-            if (!state.selectedBus) {
-              const stopNameLower = (stop.name || '').toLowerCase();
-              const foundBus = SMART_ST_DATA.buses.find(b => b.intermediateStops && b.intermediateStops.some(s => s.name.toLowerCase() === stopNameLower));
-              state.selectedBus = foundBus || SMART_ST_DATA.buses[0];
-            }
-            navigateTo('tracking-view');
+            openLiveMapForStop(stop);
           };
           quickSearchDropdown.appendChild(item);
         });
@@ -3634,6 +4185,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnPortalMyPass = document.getElementById('btn-portal-my-pass');
     if (btnPortalMyPass) {
       btnPortalMyPass.addEventListener('click', () => openModal('my-pass-modal'));
+    }
+
+    const btnPortalNearbyStops = document.getElementById('btn-portal-nearby-stops');
+    if (btnPortalNearbyStops) {
+      btnPortalNearbyStops.addEventListener('click', () => {
+        navigateTo('nearby-stops-view');
+      });
+    }
+
+    const btnPortalLocateMe = document.getElementById('btn-portal-locate-me');
+    if (btnPortalLocateMe) {
+      btnPortalLocateMe.addEventListener('click', () => {
+        showToast('Acquiring live GPS coordinates...');
+        requestUserGpsLocation(
+          pos => {
+            renderPortalNearbyStopsList();
+            renderHomeNearbyStopCard();
+            renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
+            showToast('Updated nearby stops based on your location!');
+          },
+          err => {
+            showToast('Could not acquire GPS position. Showing regional stops.');
+          }
+        );
+      });
     }
 
     const btnPortalMyFavourites = document.getElementById('btn-portal-my-favourites');
@@ -3723,6 +4299,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+
+  function setupAccessibilityControls() {
+    const toggleDark = document.getElementById('toggle-dark-mode');
+    const toggleContrast = document.getElementById('toggle-high-contrast');
+    const toggleLarge = document.getElementById('toggle-large-text');
+
+    // Restore saved preferences
+    const isDark = localStorage.getItem('wmb_dark_mode') === 'true';
+    const isContrast = localStorage.getItem('wmb_high_contrast') === 'true';
+    const isLarge = localStorage.getItem('wmb_large_text') === 'true';
+
+    if (toggleDark) {
+      toggleDark.checked = isDark;
+      document.body.classList.toggle('dark-mode', isDark);
+      toggleDark.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.body.classList.toggle('dark-mode', checked);
+        try { localStorage.setItem('wmb_dark_mode', checked); } catch(err) {}
+        showToast(checked ? '🌙 Dark Mode activated' : '☀️ Light Mode activated');
+      });
+    }
+
+    if (toggleContrast) {
+      toggleContrast.checked = isContrast;
+      document.body.classList.toggle('high-contrast', isContrast);
+      toggleContrast.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.body.classList.toggle('high-contrast', checked);
+        try { localStorage.setItem('wmb_high_contrast', checked); } catch(err) {}
+        showToast(checked ? '👁️ High Contrast Mode activated' : 'Standard Contrast restored');
+      });
+    }
+
+    if (toggleLarge) {
+      toggleLarge.checked = isLarge;
+      document.body.classList.toggle('large-text-mode', isLarge);
+      toggleLarge.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.body.classList.toggle('large-text-mode', checked);
+        try { localStorage.setItem('wmb_large_text', checked); } catch(err) {}
+        showToast(checked ? '🔍 Large Readable Text activated' : 'Standard Text Size restored');
+      });
+    }
+  }
   function setupNetworkStatus() {
     const banner = document.getElementById('offline-banner') || document.querySelector('.offline-banner');
     if (!banner) return;
@@ -3752,7 +4372,10 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal,
     simulateQRScan,
     renderRoutesScreen,
-    renderHomeDashboard
+    renderNearbyStopsScreen,
+    renderHomeDashboard,
+    openLiveMapForStop,
+    findBestUpcomingBusForStop
   };
   window.SmartST = window.WMB;
 
