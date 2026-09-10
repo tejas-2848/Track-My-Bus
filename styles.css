@@ -2849,36 +2849,149 @@ input:checked + .slider:before {
 }
 
 /* --------------------------------------------------------------------------
-   SCREEN 10: VOICE ASSISTANT
+   LIVE MAP VOICE ALERT BUTTON
    -------------------------------------------------------------------------- */
 
-.voice-hero-box {
-  display: flex;
-  flex-direction: column;
+.btn-tracking-voice-alert {
+  display: inline-flex;
   align-items: center;
-  text-align: center;
-  gap: 20px;
-  padding: 30px 16px;
-}
-
-.large-speaker-btn {
-  width: 110px;
-  height: 110px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--primary-blue), #7C3AED);
-  color: white;
-  font-size: 48px;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--apple-bg-primary, #F8FAFC);
+  border: 1px solid var(--border-subtle, #E2E8F0);
+  border-radius: var(--radius-full, 9999px);
+  color: var(--primary-blue, #1356C5);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4);
-  transition: var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  user-select: none;
+  margin-top: 6px;
 }
 
-.large-speaker-btn:hover {
-  transform: scale(1.08);
+.btn-tracking-voice-alert:hover {
+  background: rgba(19, 86, 197, 0.08);
+  border-color: var(--primary-blue, #1356C5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(19, 86, 197, 0.15);
+}
+
+.btn-tracking-voice-alert:active {
+  transform: scale(0.97);
+}
+
+body.dark-mode .btn-tracking-voice-alert {
+  background: #1E293B;
+  border-color: #334155;
+  color: #38BDF8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .btn-tracking-voice-alert:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38BDF8;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+}
+
+.btn-tracking-voice-alert .voice-alert-icon {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.btn-tracking-voice-alert:hover .voice-alert-icon {
+  transform: scale(1.1);
+}
+
+/* Equalizer soundwave indicator */
+.voice-wave-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 12px;
+}
+
+.voice-wave-indicator .vw-bar {
+  width: 2.5px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 1px;
+  transition: height 0.2s ease;
+}
+
+/* Generating / Loading state */
+.btn-tracking-voice-alert.generating {
+  border-color: #F59E0B;
+  color: #D97706;
+  opacity: 0.9;
+  cursor: wait;
+}
+
+body.dark-mode .btn-tracking-voice-alert.generating {
+  border-color: #F59E0B;
+  color: #FBBF24;
+}
+
+.btn-tracking-voice-alert.generating .voice-alert-icon {
+  animation: voicePulse 1s infinite alternate ease-in-out;
+}
+
+/* Playing state */
+.btn-tracking-voice-alert.playing {
+  background: #1356C5;
+  border-color: #1356C5;
+  color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(19, 86, 197, 0.25), 0 4px 14px rgba(19, 86, 197, 0.35);
+}
+
+body.dark-mode .btn-tracking-voice-alert.playing {
+  background: #0284C7;
+  border-color: #38BDF8;
+  color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3), 0 4px 14px rgba(2, 132, 199, 0.45);
+}
+
+.btn-tracking-voice-alert.playing .voice-wave-indicator .vw-bar:nth-child(1) {
+  animation: eqBar 0.7s infinite ease-in-out alternate;
+}
+
+.btn-tracking-voice-alert.playing .voice-wave-indicator .vw-bar:nth-child(2) {
+  animation: eqBar 0.5s infinite ease-in-out alternate 0.15s;
+}
+
+.btn-tracking-voice-alert.playing .voice-wave-indicator .vw-bar:nth-child(3) {
+  animation: eqBar 0.8s infinite ease-in-out alternate 0.3s;
+}
+
+@keyframes eqBar {
+  0% { height: 3px; }
+  100% { height: 13px; }
+}
+
+@keyframes voicePulse {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.15); opacity: 1; }
+}
+
+/* Floating map dock voice button active states */
+#btn-map-floating-voice.playing {
+  background: var(--primary-blue, #1356C5);
+  color: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(19, 86, 197, 0.3), 0 4px 12px rgba(19, 86, 197, 0.4);
+  animation: floatingVoicePulse 1.6s infinite ease-in-out;
+}
+
+#btn-map-floating-voice.generating {
+  color: #F59E0B;
+  animation: voicePulse 1s infinite alternate ease-in-out;
+}
+
+@keyframes floatingVoicePulse {
+  0% { box-shadow: 0 0 0 0 rgba(19, 86, 197, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(19, 86, 197, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(19, 86, 197, 0); }
 }
 
 /* --------------------------------------------------------------------------

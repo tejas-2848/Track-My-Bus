@@ -63,9 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
       cancelled: true
     },
     communityReportsList: [...SMART_ST_DATA.communityReports],
-    speechSynth: window.speechSynthesis || null,
-    audioPitch: 1.0,
-    audioRate: 0.95
+    isVoicePlaying: false,
+    currentAudio: null
   };
 
   // Helpers to retrieve display strings based on selected language (English by default)
@@ -215,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
           'schedule-view': dict.btnTimeTable || 'Timetable & Schedule',
           'community-view': dict.navReports || 'Community Reports',
           'admin-view': 'Admin Portal (Prototype)',
-          'voice-view': 'Voice Alerts',
           'accessibility-view': 'Accessibility & Display'
         };
         contextTitle.textContent = titles[screenId] || 'Track My Bus';
@@ -283,8 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCommunityReportsScreen();
     } else if (screenId === 'admin-view') {
       renderAdminDashboardScreen();
-    } else if (screenId === 'voice-view') {
-      renderVoiceViewScreen();
     } else if (screenId === 'nearby-stops-view') {
       renderNearbyStopsScreen();
     }
@@ -355,7 +351,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'schedule-view': dict.btnTimeTable || 'Timetable & Schedule',
         'community-view': dict.navReports || 'Community Reports',
         'admin-view': 'Admin Portal (Prototype)',
-        'voice-view': 'Voice Alerts',
         'accessibility-view': 'Accessibility & Display'
       };
       if (titles[state.currentScreen]) {
@@ -366,12 +361,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!options.silent) {
       showToast(`Language set to ${langLabels[langCode] || langCode.toUpperCase()}`);
     }
+
+    if (state.isVoicePlaying) {
+      stopAllAudio();
+    }
     
     // Re-render active view to refresh dynamic text
     if (state.currentScreen === 'tracking-view') {
       const bus = state.selectedBus;
       renderTripDetailsTimeline(bus);
       renderMapBusChips();
+
+      const voiceBtnLabel = document.getElementById('tracking-voice-btn-label');
+      if (voiceBtnLabel && !state.isVoicePlaying) {
+        voiceBtnLabel.textContent = dict.voiceAlertBtn || 'Voice Alert';
+      }
 
       const routeEl = document.getElementById('track-bus-route');
       if (routeEl) routeEl.textContent = getBusRouteName(bus);
@@ -400,41 +404,148 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --------------------------------------------------------------------------
-  // Voice Announcement (Web Speech API)
+
+  // --------------------------------------------------------------------------
+  // LIVE MAP VOICE ALERT ENGINE (GEMINI 3.1 FLASH TTS - SERVER MANAGED)
   // --------------------------------------------------------------------------
 
-  function speakText(text, lang = state.currentLanguage) {
-    if (!state.speechSynth) {
-      showToast('Voice announcements not supported on this browser');
+  function setLiveMapVoiceUIState(status) {
+    state.isVoicePlaying = (status === 'playing' || status === 'generating');
+    const headerBtn = document.getElementById('btn-tracking-voice-alert');
+    const floatingBtn = document.getElementById('btn-map-floating-voice');
+    const labelEl = document.getElementById('tracking-voice-btn-label');
+    const dict = SMART_ST_DATA.i18n[state.currentLanguage] || SMART_ST_DATA.i18n.en;
+
+    if (headerBtn) {
+      headerBtn.classList.toggle('generating', status === 'generating');
+      headerBtn.classList.toggle('playing', status === 'playing');
+      headerBtn.setAttribute('aria-pressed', status === 'playing' ? 'true' : 'false');
+    }
+
+    if (floatingBtn) {
+      floatingBtn.classList.toggle('generating', status === 'generating');
+      floatingBtn.classList.toggle('playing', status === 'playing');
+      floatingBtn.setAttribute('aria-pressed', status === 'playing' ? 'true' : 'false');
+    }
+
+    if (labelEl) {
+      if (status === 'playing') {
+        labelEl.textContent = dict.voiceAlertPlaying || 'Announcing...';
+      } else if (status === 'generating') {
+        labelEl.textContent = dict.generatingTtsAnnouncement || 'Preparing Audio...';
+      } else {
+        labelEl.textContent = dict.voiceAlertBtn || 'Voice Alert';
+      }
+    }
+  }
+
+  function stopAllAudio() {
+    if (state.currentAudio) {
+      try {
+        state.currentAudio.pause();
+        state.currentAudio.currentTime = 0;
+      } catch(e) {}
+      state.currentAudio = null;
+    }
+    state.isVoicePlaying = false;
+    setLiveMapVoiceUIState('idle');
+  }
+
+  async function playLiveMapVoiceAlert() {
+    const dict = SMART_ST_DATA.i18n[state.currentLanguage] || SMART_ST_DATA.i18n.en;
+
+    // If currently playing, clicking toggles off
+    if (state.isVoicePlaying) {
+      stopAllAudio();
       return;
     }
 
-    state.speechSynth.cancel(); // Stop any ongoing speech
+    // Fast offline check
+    if (!navigator.onLine) {
+      showToast(dict.voiceAlertOffline || 'You are offline. Voice alerts require an internet connection.');
+      return;
+    }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Set appropriate voice language tag
-    if (lang === 'mr') utterance.lang = 'mr-IN';
-    else if (lang === 'hi') utterance.lang = 'hi-IN';
-    else utterance.lang = 'en-IN';
+    // Determine current bus
+    const bus = state.selectedBus || (SMART_ST_DATA.buses && SMART_ST_DATA.buses[0]);
+    if (!bus) {
+      showToast(dict.voiceAlertError || 'Voice alert is currently unavailable.');
+      return;
+    }
 
-    utterance.rate = state.audioRate;
-    utterance.pitch = state.audioPitch;
-
-    utterance.onstart = () => {
-      showToast('Playing Voice Announcement...');
-    };
-
-    state.speechSynth.speak(utterance);
-  }
-
-  function announceBusArrival(bus) {
-    const lang = state.currentLanguage;
+    const lang = state.currentLanguage || 'en';
     let text = bus.voiceScriptMr;
     if (lang === 'en') text = bus.voiceScriptEn;
     else if (lang === 'hi') text = bus.voiceScriptHi;
 
-    speakText(text, lang);
+    if (!text) {
+      const busNum = bus.number || bus.busNumber || bus.id;
+      text = `Bus ${busNum} approaching station.`;
+    }
+
+    setLiveMapVoiceUIState('generating');
+
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: text,
+          lang: lang,
+          busId: bus.id || bus.busNumber || 'default'
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        setLiveMapVoiceUIState('idle');
+        if (errJson.error === 'KEY_NOT_CONFIGURED') {
+          showToast(dict.voiceAlertServerKeyNeeded || 'Server requires GEMINI_API_KEY to generate audio.');
+        } else {
+          showToast(dict.voiceAlertError || 'Voice alert is currently unavailable.');
+        }
+        return;
+      }
+
+      const blob = await res.blob();
+      if (!blob || blob.size < 50) {
+        setLiveMapVoiceUIState('idle');
+        showToast(dict.voiceAlertError || 'Voice alert is currently unavailable.');
+        return;
+      }
+
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      state.currentAudio = audio;
+      setLiveMapVoiceUIState('playing');
+      showToast(dict.voiceAlertPlaying || 'Announcing Bus Arrival...');
+
+      audio.onended = () => {
+        setLiveMapVoiceUIState('idle');
+        URL.revokeObjectURL(audioUrl);
+        state.currentAudio = null;
+        state.isVoicePlaying = false;
+      };
+
+      audio.onerror = () => {
+        setLiveMapVoiceUIState('idle');
+        URL.revokeObjectURL(audioUrl);
+        state.currentAudio = null;
+        state.isVoicePlaying = false;
+        showToast(dict.voiceAlertError || 'Voice alert error.');
+      };
+
+      await audio.play();
+    } catch (err) {
+      console.warn('[Live Map Voice Alert Error]', err);
+      setLiveMapVoiceUIState('idle');
+      state.isVoicePlaying = false;
+      if (!navigator.onLine) {
+        showToast(dict.voiceAlertOffline || 'You are offline. Voice alerts require an internet connection.');
+      } else {
+        showToast(dict.voiceAlertError || 'Voice alert is currently unavailable.');
+      }
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -2772,6 +2883,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const roadInfoEl = document.getElementById('track-bus-road-info');
     if (roadInfoEl) roadInfoEl.textContent = `Via ${bus.via.split(',')[0]}`;
 
+    const voiceBtnLabel = document.getElementById('tracking-voice-btn-label');
+    if (voiceBtnLabel && !state.isVoicePlaying) {
+      const dict = SMART_ST_DATA.i18n[state.currentLanguage] || SMART_ST_DATA.i18n.en;
+      voiceBtnLabel.textContent = dict.voiceAlertBtn || 'Voice Alert';
+    }
+
     // Render CITILINC/MSRTC Style Trip Overview & Vertical Timeline
     renderTripDetailsTimeline(bus);
 
@@ -3462,6 +3579,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
+
+    // 5. Live Map Voice Alert Triggers (Header Pill & Floating Dock)
+    const voiceHeaderBtn = document.getElementById('btn-tracking-voice-alert');
+    if (voiceHeaderBtn) {
+      voiceHeaderBtn.addEventListener('click', () => playLiveMapVoiceAlert());
+    }
+
+    const floatingVoiceBtn = document.getElementById('btn-map-floating-voice');
+    if (floatingVoiceBtn) {
+      floatingVoiceBtn.addEventListener('click', () => playLiveMapVoiceAlert());
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -3759,19 +3887,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         delayedListContainer.insertAdjacentHTML('beforeend', html);
       });
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  // SCREEN 10: VOICE VIEW & ASSISTANT
-  // --------------------------------------------------------------------------
-
-  function renderVoiceViewScreen() {
-    const speakerBtn = document.getElementById('voice-speaker-hero-btn');
-    if (speakerBtn) {
-      speakerBtn.onclick = () => {
-        announceBusArrival(state.selectedBus);
-      };
     }
   }
 
