@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 import json
 import base64
@@ -20,7 +20,7 @@ def load_env_key():
         return key.strip()
     env_path = os.path.join(BASE_DIR, ".env")
     if os.path.exists(env_path):
-        with open(env_path, "r", encoding="utf-8") as f:
+        with open(env_path, "r", encoding="utf-8-sig") as f:
             for line in f:
                 line = line.strip()
                 if line.startswith("GEMINI_API_KEY="):
