@@ -224,7 +224,7 @@
                   <circle cx="12" cy="9" r="2.5"/>
                 </svg>
               </span>
-              <span class="home-nearby-label">Nearby Bus Stop</span>
+              <span class="home-nearby-label" data-i18n="nearbyStop">Nearby Bus Stop</span>
             </div>
             <button type="button" class="home-nearby-view-all" id="btn-home-nearby-view-all" data-screen-target="nearby-stops-view">
               <span>View All</span>
@@ -263,7 +263,7 @@
         <!-- Primary Quick Actions Section -->
         <div class="home-section-group">
           <div class="flex-between">
-            <h3 class="home-section-title">Quick Actions</h3>
+            <h3 class="home-section-title" data-i18n="quickActions">Quick Actions</h3>
           </div>
           <div class="home-actions-grid">
             <!-- 1. Bus Routes -->
@@ -917,6 +917,12 @@
            SCREEN 13: MSRTC OFFICIAL ADMIN DASHBOARD
            =================================================================== -->
       <section id="admin-view" class="screen-view">
+        <div class="prototype-notice-callout" style="margin-bottom: 14px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>
+            <strong>Operations Prototype:</strong> Simulated control room metrics for testing. Production fleet telemetry is reserved for authenticated MSRTC depot staff.
+          </div>
+        </div>
         <div class="card">
           <div class="badge badge-blue">Official Government Portal</div>
           <h2 class="admin-section-title" data-i18n="adminDashboard">MSRTC District Control Room</h2>
@@ -1158,12 +1164,15 @@
 
   </div>
 
+  <!-- Accessible Polite Live Region for Announcements & Toasts -->
+  <div id="toast-notification" class="toast-msg" role="status" aria-live="polite" aria-atomic="true"></div>
+
   <!-- Modal for Submitting Community Report -->
-  <div class="modal-backdrop" id="report-modal">
+  <div class="modal-backdrop" id="report-modal" role="dialog" aria-modal="true" aria-labelledby="report-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">Report Bus Status</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="report-modal-title" data-i18n="reportModalTitle">Report Bus Status</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="mt-4">
@@ -1187,11 +1196,11 @@
   </div>
 
   <!-- Modal for Feedback Submission -->
-  <div class="modal-backdrop" id="feedback-modal">
+  <div class="modal-backdrop" id="feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">Passenger Feedback</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="feedback-modal-title" data-i18n="feedbackModalTitle">Passenger Feedback</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="mt-4">
@@ -1218,11 +1227,18 @@
   </div>
 
   <!-- Modal for Sign In / Registration -->
-  <div class="modal-backdrop" id="auth-modal">
+  <div class="modal-backdrop" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title" id="auth-modal-title">Sign In</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="auth-modal-title" data-i18n="signInModalTitle">Sign In</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
+      </div>
+
+      <div class="prototype-notice-callout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <strong>Prototype Account:</strong> Demo profile only. Do not enter real personal passwords or credentials. Official MSRTC bus passes and reservations are issued at <a href="https://msrtc.maharashtra.gov.in" target="_blank" rel="noopener noreferrer">msrtc.maharashtra.gov.in</a>.
+        </div>
       </div>
 
       <div class="auth-tabs flex-between mt-3" style="gap: 8px;">
@@ -1239,8 +1255,9 @@
         <label class="label-text-block">Mobile Number or Email:</label>
         <input type="text" id="auth-contact-input" class="search-input mt-1 select-input" placeholder="e.g. 9822012345 or user@email.com" required />
 
-        <label class="label-text-block">Password or 4-Digit PIN:</label>
+        <label class="label-text-block">Password or 4-Digit PIN (Demo):</label>
         <input type="password" id="auth-password-input" class="search-input mt-1 select-input" placeholder="••••" required />
+        <div class="text-xs text-secondary mt-1">For demo prototype testing, any PIN or password can be entered.</div>
 
         <button type="submit" class="btn btn-primary btn-lg w-full mt-4" id="btn-auth-submit">
           Sign In
@@ -1250,11 +1267,11 @@
   </div>
 
   <!-- Modal for Adding Favorite Stop -->
-  <div class="modal-backdrop" id="add-favorite-modal">
+  <div class="modal-backdrop" id="add-favorite-modal" role="dialog" aria-modal="true" aria-labelledby="add-favorite-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">Add Favorite Bus Stop</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="add-favorite-modal-title" data-i18n="addFavoriteModalTitle">Add Favorite Bus Stop</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="mt-3">
@@ -1267,11 +1284,11 @@
   </div>
 
   <!-- Modal for How It Works Guide -->
-  <div class="modal-backdrop" id="how-it-works-modal">
+  <div class="modal-backdrop" id="how-it-works-modal" role="dialog" aria-modal="true" aria-labelledby="how-it-works-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">How Track My Bus Works</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="how-it-works-modal-title" data-i18n="howItWorksModalTitle">How Track My Bus Works</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="how-it-works-steps mt-3" style="display: flex; flex-direction: column; gap: 14px;">
@@ -1301,11 +1318,11 @@
   </div>
 
   <!-- Modal for Ticket Booking -->
-  <div class="modal-backdrop" id="ticket-booking-modal">
+  <div class="modal-backdrop" id="ticket-booking-modal" role="dialog" aria-modal="true" aria-labelledby="ticket-booking-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">Book Bus Ticket</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="ticket-booking-modal-title" data-i18n="bookTicketModalTitle">Book Bus Ticket</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="prototype-notice-callout">
@@ -1361,11 +1378,18 @@
   </div>
 
   <!-- Modal for Viewing Saved / Active Tickets -->
-  <div class="modal-backdrop" id="view-tickets-modal">
+  <div class="modal-backdrop" id="view-tickets-modal" role="dialog" aria-modal="true" aria-labelledby="view-tickets-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">View Tickets</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="view-tickets-modal-title" data-i18n="viewTicketsModalTitle">View Tickets</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
+      </div>
+
+      <div class="prototype-notice-callout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <strong>Prototype Ticket:</strong> Displayed for demonstration only. Valid conductor QR tickets and reservations must be booked through <a href="https://msrtc.maharashtra.gov.in" target="_blank" rel="noopener noreferrer">msrtc.maharashtra.gov.in</a> or physical MSRTC counters.
+        </div>
       </div>
 
       <div class="mt-3">
@@ -1413,11 +1437,11 @@
   </div>
 
   <!-- Modal for My Pass -->
-  <div class="modal-backdrop" id="my-pass-modal">
+  <div class="modal-backdrop" id="my-pass-modal" role="dialog" aria-modal="true" aria-labelledby="my-pass-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">My Pass</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="my-pass-modal-title" data-i18n="myPassModalTitle">My Pass</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="prototype-notice-callout">
@@ -1470,11 +1494,11 @@
   </div>
 
   <!-- Modal for Apply Offline Pass -->
-  <div class="modal-backdrop" id="offline-pass-modal">
+  <div class="modal-backdrop" id="offline-pass-modal" role="dialog" aria-modal="true" aria-labelledby="offline-pass-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">Apply Offline Bus Pass</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="offline-pass-modal-title" data-i18n="offlinePassModalTitle">Apply Offline Bus Pass</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="prototype-notice-callout">
@@ -1516,11 +1540,11 @@
   </div>
 
   <!-- Modal for Help Line -->
-  <div class="modal-backdrop" id="helpline-modal">
+  <div class="modal-backdrop" id="helpline-modal" role="dialog" aria-modal="true" aria-labelledby="helpline-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">Emergency & Help Line</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="helpline-modal-title" data-i18n="helplineModalTitle">Emergency & Help Line</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="mt-3" style="display: flex; flex-direction: column; gap: 10px;">
@@ -1564,11 +1588,11 @@
   </div>
 
   <!-- Modal for Home My Favourites -->
-  <div class="modal-backdrop" id="home-favorites-modal">
+  <div class="modal-backdrop" id="home-favorites-modal" role="dialog" aria-modal="true" aria-labelledby="home-favorites-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
-        <h3 class="modal-title">My Favourites</h3>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <h3 class="modal-title" id="home-favorites-modal-title" data-i18n="favoritesModalTitle">My Favourites</h3>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="mt-3">
@@ -1584,14 +1608,14 @@
   </div>
 
   <!-- Modal for Home Nearby Bus Stops -->
-  <div class="modal-backdrop" id="nearby-stops-modal">
+  <div class="modal-backdrop" id="nearby-stops-modal" role="dialog" aria-modal="true" aria-labelledby="nearby-stops-modal-title">
     <div class="modal-drawer">
       <div class="flex-between">
         <div class="flex-align gap-2">
-          <h3 class="modal-title">Nearby Bus Stops</h3>
+          <h3 class="modal-title" id="nearby-stops-modal-title" data-i18n="nearbyStopsModalTitle">Nearby Bus Stops</h3>
           <span class="text-xs" id="portal-nearby-gps-status" style="color: var(--status-green); font-weight: 700;">● Live GPS</span>
         </div>
-        <button class="icon-btn modal-close-trigger">✕</button>
+        <button class="icon-btn modal-close-trigger" aria-label="Close dialog">✕</button>
       </div>
 
       <div class="flex-between mt-2 mb-2">

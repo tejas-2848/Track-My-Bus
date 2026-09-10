@@ -8,7 +8,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const state = {
     currentScreen: 'splash-view',
     navigationStack: ['home-view'],
-    currentLanguage: 'en', // Default to English as requested; switches to Marathi/Hindi on user selection
+    currentLanguage: (() => {
+      try {
+        const saved = localStorage.getItem('wmb_language');
+        if (saved && (saved === 'en' || saved === 'mr' || saved === 'hi')) return saved;
+      } catch(e) {}
+      return 'en';
+    })(),
+    activeModalId: null,
+    modalTriggerElement: null,
     activeStop: null,
     hasUserSelectedStop: false,
     selectedBus: null,
@@ -194,30 +202,45 @@ document.addEventListener('DOMContentLoaded', () => {
         brandSection.style.display = 'none';
         childNav.style.display = 'flex';
 
+        const dict = SMART_ST_DATA.i18n[state.currentLanguage] || SMART_ST_DATA.i18n.en;
         const titles = {
           'tracking-view': (state.selectedBus ? `${state.selectedBus.id.replace('BUS-', 'Bus ')} · Live Tracking` : 'Live Bus Tracking'),
-          'routes-view': 'Bus Routes & Timetable',
-          'stop-view': 'Bus Routes & Stops',
+          'routes-view': dict.navRoutes ? `${dict.navRoutes} & Timetable` : 'Bus Routes & Timetable',
+          'stop-view': dict.navRoutes ? `${dict.navRoutes} & Stops` : 'Bus Routes & Stops',
           'stop-info-view': (state.activeStop ? getStopDisplayName(state.activeStop) : 'Bus Stop Details'),
-          'nearby-stops-view': 'Nearby Bus Stops',
-          'scanner-view': 'Scan Bus Stop QR',
-          'account-view': 'My Account & Passes',
+          'nearby-stops-view': dict.navNearby ? `${dict.navNearby} Bus Stops` : 'Nearby Bus Stops',
+          'scanner-view': dict.navScanner || 'Scan Bus Stop QR',
+          'account-view': dict.navAccount ? `${dict.navAccount} & Passes` : 'My Account & Passes',
           'bus-details-view': 'Bus Route Details',
-          'schedule-view': 'Timetable & Schedule',
-          'community-view': 'Community Reports',
-          'admin-view': 'Admin Portal',
-          'voice-view': 'Voice Alerts'
+          'schedule-view': dict.btnTimeTable || 'Timetable & Schedule',
+          'community-view': dict.navReports || 'Community Reports',
+          'admin-view': 'Admin Portal (Prototype)',
+          'voice-view': 'Voice Alerts',
+          'accessibility-view': 'Accessibility & Display'
         };
         contextTitle.textContent = titles[screenId] || 'Track My Bus';
       }
     }
 
-    // Update bottom nav active state
+    // Update bottom nav active state with screen-to-tab mapping
+    const navMapping = {
+      'home-view': 'home-view',
+      'tracking-view': 'tracking-view',
+      'scanner-view': 'scanner-view',
+      'planner-view': 'planner-view',
+      'account-view': 'account-view',
+      'accessibility-view': 'account-view',
+      'notifications-view': 'account-view'
+    };
+    const activeNavTarget = navMapping[screenId] || screenId;
+
     document.querySelectorAll('.nav-item').forEach(nav => {
-      if (nav.dataset.screenTarget === screenId) {
+      if (nav.dataset.screenTarget === activeNavTarget) {
         nav.classList.add('active');
+        nav.setAttribute('aria-current', 'page');
       } else {
         nav.classList.remove('active');
+        nav.removeAttribute('aria-current');
       }
     });
 
@@ -271,8 +294,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Multilingual & Translation Engine
   // --------------------------------------------------------------------------
 
-  function updateAppLanguage(langCode) {
+  function updateAppLanguage(langCode, options = {}) {
     state.currentLanguage = langCode;
+    try { localStorage.setItem('wmb_language', langCode); } catch(e) {}
+    document.documentElement.lang = langCode;
     const dict = SMART_ST_DATA.i18n[langCode] || SMART_ST_DATA.i18n.en;
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -302,8 +327,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.lang-selector-btn').forEach(btn => {
       if (btn.dataset.lang === langCode) {
         btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
       } else {
         btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
       }
     });
 
@@ -312,7 +339,33 @@ document.addEventListener('DOMContentLoaded', () => {
     if (headerLangText) {
       headerLangText.textContent = langLabels[langCode] || langCode;
     }
-    showToast(`Language set to ${langLabels[langCode] || langCode.toUpperCase()}`);
+
+    // Refresh contextual header title if currently on a child screen
+    const contextTitle = document.getElementById('header-context-title');
+    if (contextTitle && state.currentScreen && state.currentScreen !== 'home-view' && state.currentScreen !== 'splash-view') {
+      const titles = {
+        'tracking-view': (state.selectedBus ? `${state.selectedBus.id.replace('BUS-', 'Bus ')} · Live Tracking` : 'Live Bus Tracking'),
+        'routes-view': dict.navRoutes ? `${dict.navRoutes} & Timetable` : 'Bus Routes & Timetable',
+        'stop-view': dict.navRoutes ? `${dict.navRoutes} & Stops` : 'Bus Routes & Stops',
+        'stop-info-view': (state.activeStop ? getStopDisplayName(state.activeStop) : 'Bus Stop Details'),
+        'nearby-stops-view': dict.navNearby ? `${dict.navNearby} Bus Stops` : 'Nearby Bus Stops',
+        'scanner-view': dict.navScanner || 'Scan Bus Stop QR',
+        'account-view': dict.navAccount ? `${dict.navAccount} & Passes` : 'My Account & Passes',
+        'bus-details-view': 'Bus Route Details',
+        'schedule-view': dict.btnTimeTable || 'Timetable & Schedule',
+        'community-view': dict.navReports || 'Community Reports',
+        'admin-view': 'Admin Portal (Prototype)',
+        'voice-view': 'Voice Alerts',
+        'accessibility-view': 'Accessibility & Display'
+      };
+      if (titles[state.currentScreen]) {
+        contextTitle.textContent = titles[state.currentScreen];
+      }
+    }
+
+    if (!options.silent) {
+      showToast(`Language set to ${langLabels[langCode] || langCode.toUpperCase()}`);
+    }
     
     // Re-render active view to refresh dynamic text
     if (state.currentScreen === 'tracking-view') {
@@ -3726,29 +3779,82 @@ document.addEventListener('DOMContentLoaded', () => {
   // UI Helpers (Toast & Modal)
   // --------------------------------------------------------------------------
 
+  let toastTimeout = null;
   function showToast(message) {
     let toast = document.getElementById('toast-notification');
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'toast-notification';
       toast.className = 'toast-msg';
+      toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
+      toast.setAttribute('aria-atomic', 'true');
       document.body.appendChild(toast);
+    }
+    if (toastTimeout) {
+      clearTimeout(toastTimeout);
+      toastTimeout = null;
     }
     toast.textContent = message;
     toast.classList.add('show');
-    setTimeout(() => {
+    toastTimeout = setTimeout(() => {
       toast.classList.remove('show');
-    }, 3000);
+      toastTimeout = null;
+    }, 3200);
   }
 
-  function openModal(modalId) {
-    const m = document.getElementById(modalId);
-    if (m) m.classList.add('active');
+  function openModal(modalId, triggerEl) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    state.modalTriggerElement = triggerEl || document.activeElement;
+    state.activeModalId = modalId;
+
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+
+    document.body.style.overflow = 'hidden';
+    const appContainer = document.getElementById('app-container');
+    if (appContainer) {
+      appContainer.setAttribute('aria-hidden', 'true');
+    }
+
+    const drawer = modal.querySelector('.modal-drawer') || modal;
+    const focusable = drawer.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    if (focusable.length > 0) {
+      const initialFocus = drawer.querySelector('.modal-close-trigger') || focusable[0];
+      setTimeout(() => {
+        try { initialFocus.focus(); } catch(e) {}
+      }, 50);
+    }
   }
 
   function closeModal(modalId) {
-    const m = document.getElementById(modalId);
-    if (m) m.classList.remove('active');
+    const targetId = modalId || state.activeModalId;
+    if (!targetId) return;
+
+    const modal = document.getElementById(targetId);
+    if (modal) {
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    const remainingModal = document.querySelector('.modal-backdrop.active');
+    if (!remainingModal) {
+      document.body.style.overflow = '';
+      const appContainer = document.getElementById('app-container');
+      if (appContainer) {
+        appContainer.removeAttribute('aria-hidden');
+      }
+      state.activeModalId = null;
+
+      if (state.modalTriggerElement && typeof state.modalTriggerElement.focus === 'function') {
+        try { state.modalTriggerElement.focus(); } catch(e) {}
+        state.modalTriggerElement = null;
+      }
+    } else {
+      state.activeModalId = remainingModal.id;
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -3932,8 +4038,52 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.modal-close-trigger').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const modal = e.currentTarget.closest('.modal-backdrop');
-        if (modal) modal.classList.remove('active');
+        if (modal) closeModal(modal.id);
       });
+    });
+
+    // Modal backdrop click-to-dismiss (clicking outside modal drawer)
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) {
+          closeModal(backdrop.id);
+        }
+      });
+    });
+
+    // Global keyboard handling: Escape to dismiss active modal, Tab focus trapping
+    document.addEventListener('keydown', (e) => {
+      if (state.activeModalId) {
+        const modal = document.getElementById(state.activeModalId);
+        if (!modal) return;
+
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeModal(state.activeModalId);
+          return;
+        }
+
+        if (e.key === 'Tab') {
+          const drawer = modal.querySelector('.modal-drawer') || modal;
+          const focusable = Array.from(drawer.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+          if (focusable.length === 0) return;
+
+          const firstEl = focusable[0];
+          const lastEl = focusable[focusable.length - 1];
+
+          if (e.shiftKey) {
+            if (document.activeElement === firstEl) {
+              e.preventDefault();
+              lastEl.focus();
+            }
+          } else {
+            if (document.activeElement === lastEl) {
+              e.preventDefault();
+              firstEl.focus();
+            }
+          }
+        }
+      }
     });
 
     setupJourneyPlanner();
@@ -4270,6 +4420,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    const drawerBtnHowItWorks = document.getElementById('drawer-btn-how-it-works');
+    if (drawerBtnHowItWorks) {
+      drawerBtnHowItWorks.addEventListener('click', () => {
+        closeSideDrawer();
+        openModal('how-it-works-modal');
+      });
+    }
+
     // 9. Home Quick Search with Instant Suggestions
     const quickSearchInput = document.getElementById('home-quick-search-input');
     const quickSearchBtn = document.getElementById('home-quick-search-btn');
@@ -4556,6 +4714,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // --------------------------------------------------------------------------
   // Application Bootstrap
   // --------------------------------------------------------------------------
+
+  // Initialize and apply persisted language silently
+  updateAppLanguage(state.currentLanguage, { silent: true });
 
   setupEventListeners();
 

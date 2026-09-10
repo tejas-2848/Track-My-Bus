@@ -277,6 +277,28 @@ body.large-text-mode {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Accessible High-Contrast Focus Indicators (WCAG 2.2 AA) */
+:focus-visible {
+  outline: 2px solid var(--primary-blue, #1356C5) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(19, 86, 197, 0.25) !important;
+}
+
+body.dark-mode :focus-visible {
+  outline-color: #60A5FA !important;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.3) !important;
+}
+
+body.high-contrast :focus-visible {
+  outline: 3px solid #000000 !important;
+  outline-offset: 3px !important;
+}
+
+body.high-contrast.dark-mode :focus-visible {
+  outline: 3px solid #FFFF00 !important;
+  outline-offset: 3px !important;
+}
+
 html, body {
   width: 100%;
   min-height: 100%;
@@ -1623,7 +1645,7 @@ body.dark-mode .tracking-header-card .section-title {
 }
 
 .tracking-switch-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -1948,7 +1970,7 @@ body.dark-mode .telemetry-item .value {
 }
 
 .telemetry-item .label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--apple-label-secondary);
   font-weight: 600;
   text-transform: uppercase;
@@ -2044,6 +2066,7 @@ body.dark-mode .telemetry-item .value {
 }
 
 .popup-metric .m-val {
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 800;
   color: var(--primary-blue);
@@ -2051,7 +2074,7 @@ body.dark-mode .telemetry-item .value {
 }
 
 .popup-metric .m-lbl {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text-secondary);
   font-weight: 600;
   text-transform: uppercase;
@@ -2796,6 +2819,7 @@ input:checked + .slider:before {
 }
 
 .stat-kpi-val {
+  font-variant-numeric: tabular-nums;
   font-size: 24px;
   font-weight: 800;
   color: var(--primary-blue);
@@ -3098,6 +3122,173 @@ input:checked + .slider:before {
 
 .home-search-item:hover {
   background: var(--apple-tint-subtle);
+}
+
+/* ==========================================================================
+   Transit Signal Maharashtra: Home Decision Card ("Your Next Bus")
+   ========================================================================== */
+
+.home-decision-card {
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-md, 14px);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.home-decision-card:hover {
+  border-color: rgba(19, 86, 197, 0.35);
+  box-shadow: 0 6px 20px rgba(19, 86, 197, 0.1);
+}
+
+.home-decision-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.home-decision-stop {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-decision-stop-name {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text-main, #1E2430);
+  margin: 0;
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+
+.home-decision-dist {
+  color: var(--text-secondary, #5A6474);
+}
+
+.home-decision-countdown {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  background: rgba(19, 86, 197, 0.07);
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(19, 86, 197, 0.15);
+  flex-shrink: 0;
+}
+
+.home-decision-eta-num {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--primary-blue, #1356C5);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+.home-decision-eta-unit {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary-blue, #1356C5);
+}
+
+.home-decision-bus-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--bg-main, #F7F5F0);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.home-decision-bus-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.home-decision-bus-type-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--msrtc-crimson, #C7352E);
+}
+
+.home-decision-bus-dest {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main, #1E2430);
+}
+
+.home-decision-service-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(19, 122, 69, 0.1);
+  color: var(--status-green, #137A45);
+}
+
+.home-fav-chips-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.home-fav-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.home-fav-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: var(--surface, #FFFFFF);
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main, #1E2430);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.home-fav-chip:hover {
+  border-color: var(--primary-blue, #1356C5);
+  background: rgba(19, 86, 197, 0.04);
+}
+
+.home-fav-chip .chip-eta {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary-blue, #1356C5);
+  background: rgba(19, 86, 197, 0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+body.dark-mode .home-decision-card {
+  background: var(--surface-dark, #1E2430);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .home-decision-bus-row {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+body.dark-mode .home-fav-chip {
+  background: var(--surface-dark, #1E2430);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #E2E8F0;
 }
 
 /* 3. Nearby Bus Stop Card (Apple Maps Transit Departure Style) */
@@ -4062,7 +4253,7 @@ body.dark-mode .grid-card-label {
 }
 
 .drawer-tagline {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -4455,7 +4646,7 @@ body.dark-mode .grid-card-label {
 }
 
 .route-path-tag {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--apple-label-secondary);
   text-transform: uppercase;
   font-weight: 600;
@@ -4529,6 +4720,7 @@ body.dark-mode .grid-card-label {
 }
 
 .route-metric-val {
+  font-variant-numeric: tabular-nums;
   font-size: 13.5px;
   font-weight: 600;
   color: var(--apple-label-primary);
@@ -4581,6 +4773,7 @@ body.dark-mode .grid-card-label {
 }
 
 .route-next-bus-eta {
+  font-variant-numeric: tabular-nums;
   font-size: 12.5px;
   font-weight: 700;
   color: var(--apple-green);
@@ -4756,7 +4949,7 @@ body.dark-mode .grid-card-label {
 }
 
 .route-bus-type-badge {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 4px;
@@ -4977,7 +5170,7 @@ body.high-contrast .route-code-pill {
 }
 
 .nearby-stat-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-secondary);
   font-weight: 600;
   text-transform: uppercase;
@@ -5126,7 +5319,7 @@ body.high-contrast .route-code-pill {
 }
 
 .nearby-card-code-pill {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   padding: 2px 6px;
   border-radius: var(--radius-xs);
@@ -5151,6 +5344,7 @@ body.high-contrast .route-code-pill {
 }
 
 .nearby-card-dist-pill {
+  font-variant-numeric: tabular-nums;
   display: inline-flex;
   align-items: center;
   font-size: 12px;
@@ -5162,6 +5356,7 @@ body.high-contrast .route-code-pill {
 }
 
 .nearby-card-walk-pill {
+  font-variant-numeric: tabular-nums;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
@@ -5234,6 +5429,7 @@ body.high-contrast .route-code-pill {
 }
 
 .nearby-preview-eta {
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 800;
   color: var(--status-green);
@@ -5248,7 +5444,7 @@ body.high-contrast .route-code-pill {
 }
 
 .nearby-preview-status {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--status-green);
 }
