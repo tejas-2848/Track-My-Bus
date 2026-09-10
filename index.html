@@ -4,14 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Where's My Bus? — Live Bus Tracking</title>
-  <meta name="theme-color" content="#0EA5E9">
+  <meta name="theme-color" content="#EF4444">
   <meta name="description" content="Track MSRTC buses in real-time. Where's My Bus? — Live bus tracking for Maharashtra.">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <link rel="apple-touch-icon" href="assets/logo.png">
   
   <!-- Leaflet Map CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <!-- App Stylesheet -->
   <link rel="stylesheet" href="styles.css">
+
+  <!-- jsQR Client-Side QR Decoding Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
 
@@ -20,24 +25,33 @@
     <!-- Top App Header -->
     <header class="app-header">
       <div class="brand-section" data-screen-target="home-view">
-        <div class="brand-logo-badge">🚌</div>
+        <img src="assets/logo.png" alt="Where's My Bus? Logo" class="brand-logo-img">
+        <div class="brand-divider"></div>
         <div class="brand-title">
-          <h1 data-i18n="appName">Where's My Bus?</h1>
-          <span class="brand-tagline" data-i18n="tagline">Know before you wait</span>
+          <h1 data-i18n="appName">Where's My <span class="brand-accent">Bus?</span></h1>
+          <span class="brand-tagline" data-i18n="tagline">KNOW BEFORE YOU WAIT.</span>
         </div>
       </div>
 
       <div class="header-controls">
-        <button class="icon-btn" data-screen-target="voice-view" title="Voice Announcements">🔊</button>
-        <button class="icon-btn" data-screen-target="accessibility-view" title="Accessibility & Contrast">♿</button>
-        <button class="icon-btn" data-screen-target="admin-view" title="Admin Dashboard">⚙️</button>
+        <div class="header-lang-wrap" id="header-lang-wrap">
+          <button class="header-lang-btn" id="header-lang-dropdown-btn" type="button" aria-label="Select Language">
+            <span id="header-current-lang-text">English</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          </button>
+          <div class="header-lang-menu" id="header-lang-menu">
+            <button class="header-lang-option" data-lang="en" type="button">English</button>
+            <button class="header-lang-option" data-lang="mr" type="button">मराठी</button>
+            <button class="header-lang-option" data-lang="hi" type="button">हिंदी</button>
+          </div>
+        </div>
       </div>
     </header>
 
-    <!-- Low Network Banner -->
-    <div class="offline-banner">
+    <!-- Low Network Banner (shown dynamically when offline) -->
+    <div class="offline-banner" id="offline-banner" style="display: none;">
       <span>📡</span>
-      <span data-i18n="lowNetNotice">Where's My Bus? Low-Data Optimized Mode Active</span>
+      <span data-i18n="lowNetNotice">Where's My Bus? Offline Mode Active</span>
     </div>
 
     <!-- Main Dynamic Content Container -->
@@ -49,10 +63,12 @@
       <section id="splash-view" class="screen-view active">
         <div class="splash-container">
           <div class="splash-hero-card">
-            <div class="splash-emblem">🚌</div>
+            <div class="splash-logo-wrap">
+              <img src="assets/logo.png" alt="Where's My Bus? Logo" class="splash-logo-img">
+            </div>
             <div class="splash-title-wrap">
-              <h1 data-i18n="appName">Where's My Bus?</h1>
-              <p data-i18n="tagline">Track your bus in real-time.</p>
+              <h1 data-i18n="appName">Where's My <span class="brand-accent">Bus?</span></h1>
+              <p data-i18n="tagline">KNOW BEFORE YOU WAIT.</p>
               <div class="splash-msrtc-text">
                 MSRTC Digital Bus Stop System | महाराष्ट्र शासन
               </div>
@@ -68,15 +84,15 @@
               📷 Scan Bus Stop QR
             </button>
 
-            <button class="btn btn-secondary btn-lg" data-screen-target="home-view" data-i18n="demoBtn">
-              ✨ Try Niphad Stop Demo
+            <button class="btn btn-secondary btn-lg" data-screen-target="home-view" data-i18n="exploreStopsBtn" id="btn-splash-explore">
+              🚏 Explore Bus Stops & Arrivals
             </button>
           </div>
 
           <!-- Language Quick Picker -->
           <div class="flex-between gap-2 lang-picker-row">
             <button class="chip-btn lang-selector-btn" data-lang="mr">मराठी</button>
-            <button class="chip-btn lang-selector-btn" data-lang="en">English</button>
+            <button class="chip-btn lang-selector-btn active" data-lang="en">English</button>
             <button class="chip-btn lang-selector-btn" data-lang="hi">हिंदी</button>
           </div>
         </div>
@@ -94,67 +110,343 @@
 
           <div class="scanner-viewport">
             <video id="camera-video-element" autoplay playsinline muted></video>
+            <canvas id="qr-scan-canvas" style="display: none;"></canvas>
             <div class="scanner-overlay">
-              <div class="scan-frame">
+              <div class="scan-frame" id="scan-target-frame">
                 <div class="scan-laser"></div>
               </div>
             </div>
           </div>
 
-          <div class="card w-full text-center">
-            <div class="route-progress-label">Or Select a Sample Maharashtra Stop:</div>
-            <div class="sample-qr-chips">
-              <button class="chip-btn sample-qr-btn" data-stop-id="NPH-01">📍 Niphad Bus Stand (Nashik-Yeola)</button>
-              <button class="chip-btn sample-qr-btn" data-stop-id="SNR-02">📍 Sinnar Phata Circle</button>
-              <button class="chip-btn sample-qr-btn" data-stop-id="TRM-03">📍 Trimbakeshwar Depot</button>
-              <button class="chip-btn sample-qr-btn" data-stop-id="RJG-04">📍 Rajgurunagar Stand</button>
+          <!-- Scanner Controls: Upload QR & Torch buttons just below scanner -->
+          <div class="scanner-actions-bar">
+            <label class="btn btn-secondary scanner-action-btn" id="btn-upload-qr" title="Upload QR image from device">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Upload QR</span>
+              <input type="file" id="qr-file-input" accept="image/*" style="display: none;">
+            </label>
+
+            <button class="btn btn-secondary scanner-action-btn" id="btn-toggle-torch" type="button" title="Toggle Flashlight / Torch">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              <span id="torch-label">Torch</span>
+            </button>
+          </div>
+
+          <!-- Card: Nearby Bus Stops -->
+          <div class="card w-full">
+            <!-- Nearby Bus Stops (GPS Detected) -->
+            <div class="flex-between">
+              <div style="text-align: left;">
+                <h3 class="card-subtitle" style="margin-bottom: 2px;">📍 Nearby Bus Stops</h3>
+                <span class="text-xs" id="nearby-gps-status" style="color: var(--status-green); font-weight: 600;">● Live GPS Detected</span>
+              </div>
+              <button class="btn btn-sm btn-secondary" id="btn-detect-gps-stops" type="button" title="Refresh GPS Location" style="padding: 5px 10px; font-size: 11px;">
+                🔄 Locate Me
+              </button>
+            </div>
+
+            <div id="nearby-stops-container" class="nearby-stops-list">
+              <!-- Dynamically rendered nearby stops -->
             </div>
           </div>
         </div>
       </section>
 
       <!-- ===================================================================
-           SCREEN 3: BUS STOP HOME
+           SCREEN 1: HOME TRANSPORTATION PORTAL
            =================================================================== -->
-      <section id="home-view" class="screen-view">
-        <!-- Stop Header -->
-        <div class="stop-home-header">
-          <div class="stop-title-row">
-            <div>
-              <div class="stop-name" id="home-stop-name">Niphad Bus Stand</div>
-              <div class="stop-subname" id="home-stop-location">Niphad, Nashik (MSRTC-MH15-NPH01)</div>
+      <section id="home-view" class="screen-view active">
+        <!-- Hero Section: Title, Subtitle & Minimal Bus Illustration -->
+        <div class="home-hero-section">
+          <div class="home-hero-row">
+            <div class="home-hero-text">
+              <h2 class="home-hero-title">Find your bus</h2>
+              <p class="home-hero-subtitle">Search routes, stops or places.</p>
             </div>
-            <span class="badge badge-green live-badge-gps">● LIVE GPS</span>
+            <div class="home-hero-illustration" aria-hidden="true">
+              <svg width="140" height="85" viewBox="0 0 140 85" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Skyline silhouettes -->
+                <rect x="92" y="32" width="16" height="38" rx="2" fill="#BAE6FD" opacity="0.45"/>
+                <rect x="106" y="22" width="20" height="48" rx="2" fill="#93C5FD" opacity="0.4"/>
+                <rect x="124" y="34" width="14" height="36" rx="2" fill="#BAE6FD" opacity="0.5"/>
+                <!-- Trees / Foliage -->
+                <circle cx="22" cy="56" r="9" fill="#86EFAC" opacity="0.8"/>
+                <rect x="20.5" y="56" width="3" height="14" fill="#64748B"/>
+                <circle cx="32" cy="60" r="7" fill="#4ADE80" opacity="0.85"/>
+                <rect x="30.5" y="60" width="3" height="10" fill="#64748B"/>
+                <circle cx="132" cy="54" r="8" fill="#86EFAC" opacity="0.75"/>
+                <rect x="130.5" y="54" width="3" height="16" fill="#64748B"/>
+                <!-- Bus Stop Sign Pole -->
+                <line x1="118" y1="34" x2="118" y2="70" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="118" cy="32" r="8" fill="#0284C7"/>
+                <rect x="114" y="28" width="8" height="6.5" rx="1.5" fill="white"/>
+                <circle cx="115.5" cy="36" r="0.8" fill="#0284C7"/>
+                <circle cx="120.5" cy="36" r="0.8" fill="#0284C7"/>
+                <!-- Road line -->
+                <path d="M0 70L140 70" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/>
+                <!-- Blue Bus Body -->
+                <rect x="42" y="42" width="56" height="23" rx="4" fill="#0284C7"/>
+                <!-- Bus Top Accent & Shadow -->
+                <rect x="43" y="42" width="54" height="3" fill="#38BDF8" opacity="0.7"/>
+                <!-- Windows -->
+                <rect x="46" y="47" width="9" height="7.5" rx="1.5" fill="#FFFFFF"/>
+                <rect x="57" y="47" width="9" height="7.5" rx="1.5" fill="#FFFFFF"/>
+                <rect x="68" y="47" width="9" height="7.5" rx="1.5" fill="#FFFFFF"/>
+                <rect x="79" y="47" width="9" height="7.5" rx="1.5" fill="#FFFFFF"/>
+                <!-- Door outline -->
+                <rect x="90" y="47" width="5.5" height="17" rx="1" fill="#0369A1"/>
+                <!-- Headlight -->
+                <rect x="96" y="57" width="2" height="4" rx="1" fill="#FDE047"/>
+                <rect x="42" y="57" width="2" height="4" rx="1" fill="#EF4444"/>
+                <!-- Wheels -->
+                <circle cx="55" cy="65" r="5" fill="#1E293B"/>
+                <circle cx="55" cy="65" r="2" fill="#E2E8F0"/>
+                <circle cx="85" cy="65" r="5" fill="#1E293B"/>
+                <circle cx="85" cy="65" r="2" fill="#E2E8F0"/>
+              </svg>
+            </div>
           </div>
 
-          <div class="stop-meta-pills">
-            <span class="meta-pill">🌡️ 28°C Clear</span>
-            <span class="meta-pill">⏱️ Updated: Just now</span>
-            <span class="meta-pill">⚡ 98% Confidence</span>
+          <!-- Clean Minimal Search Bar -->
+          <div class="home-search-container">
+            <div class="home-search-input-wrap">
+              <span class="home-search-icon">🔍</span>
+              <input 
+                type="text" 
+                id="home-quick-search-input" 
+                class="home-search-input" 
+                placeholder="Search bus routes, stops or places..." 
+                autocomplete="off"
+                spellcheck="false"
+              >
+            </div>
+            <!-- Live Auto-Suggest Results Dropdown -->
+            <div class="home-search-dropdown" id="home-search-dropdown" style="display: none;"></div>
           </div>
         </div>
 
-        <!-- Quick Toolbar -->
-        <div class="flex-between gap-2">
-          <button class="btn btn-sm btn-voice" data-screen-target="voice-view">
-            🔊 Voice Announcement
-          </button>
-          <button class="btn btn-sm btn-secondary" data-screen-target="stop-info-view">
-            ℹ️ Stop Facilities
-          </button>
-          <button class="btn btn-sm btn-accent" id="btn-open-report-modal">
-            📢 Report Status
-          </button>
+        <!-- Nearby Bus Stop Card -->
+        <div class="card home-nearby-card" id="home-nearby-card">
+          <div class="home-nearby-header">
+            <div class="home-nearby-title-wrap">
+              <span class="home-nearby-icon">📍</span>
+              <span class="home-nearby-label">Nearby Bus Stop</span>
+            </div>
+            <button type="button" class="home-nearby-view-all" id="btn-home-nearby-view-all">
+              View All ➔
+            </button>
+          </div>
+
+          <div class="home-nearby-stop-info">
+            <h3 class="home-nearby-stop-name" id="home-nearby-stop-name">Central Bus Stand</h3>
+            <span class="home-nearby-dist" id="home-nearby-stop-dist">0.8 km away</span>
+          </div>
+
+          <!-- Live Bus Arrival Box -->
+          <div class="home-nearby-bus-box" id="home-nearby-bus-box">
+            <div class="home-nearby-bus-left">
+              <div class="home-bus-icon-circle">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="14" rx="2"/>
+                  <path d="M7 18v2M17 18v2M3 10h18"/>
+                  <circle cx="7.5" cy="14.5" r="1"/>
+                  <circle cx="16.5" cy="14.5" r="1"/>
+                </svg>
+              </div>
+              <div class="home-nearby-bus-meta">
+                <div class="home-nearby-bus-type" id="home-nearby-bus-type">Shivshahi</div>
+                <div class="home-nearby-bus-dest" id="home-nearby-bus-dest">Towards Nashik</div>
+              </div>
+            </div>
+            <div class="home-nearby-bus-right">
+              <div class="home-nearby-eta" id="home-nearby-eta">6 min</div>
+              <span class="home-nearby-live-badge">Live</span>
+            </div>
+          </div>
         </div>
 
-        <!-- Next Arrivals Section -->
-        <div class="flex-between">
-          <h2 class="card-title" data-i18n="liveArrivals">Live Arrivals</h2>
-          <span class="auto-refresh-label">Auto-refreshing</span>
+        <!-- Pagination Dots -->
+        <div class="home-carousel-dots">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
         </div>
 
-        <div id="arrivals-cards-container" class="arrivals-container">
-          <!-- Dynamically populated from JS -->
+        <!-- Quick Actions Section -->
+        <div class="home-section-group">
+          <h3 class="home-section-title">Quick Actions</h3>
+          <div class="home-actions-grid">
+            <!-- 1. Bus Routes -->
+            <button class="home-action-card card-blue" id="btn-portal-bus-routes" data-screen-target="routes-view" type="button">
+              <div class="home-action-icon-wrap">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="6" cy="19" r="3"/>
+                  <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
+                  <circle cx="18" cy="5" r="3"/>
+                </svg>
+              </div>
+              <span class="home-action-label" data-i18n="btnBusRoutes">Bus Routes</span>
+            </button>
+
+            <!-- 2. Nearby Bus Stops -->
+            <button class="home-action-card card-green" id="btn-portal-nearby-stops" data-screen-target="scanner-view" type="button">
+              <div class="home-action-icon-wrap">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" fill="#16A34A"/>
+                  <circle cx="12" cy="9" r="3" fill="white"/>
+                </svg>
+              </div>
+              <span class="home-action-label" data-i18n="btnNearbyStops">Nearby Bus Stops</span>
+            </button>
+
+            <!-- 3. My Favourites -->
+            <button class="home-action-card card-orange" id="btn-portal-my-favourites" type="button">
+              <div class="home-action-icon-wrap">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="#EA580C">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </div>
+              <span class="home-action-label" data-i18n="btnMyFavourites">My Favourites</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- More Options Section -->
+        <div class="home-section-group">
+          <h3 class="home-section-title">More Options</h3>
+          <div class="home-actions-grid">
+            <!-- 4. Feedback -->
+            <button class="home-action-card card-purple" id="btn-portal-feedback" type="button">
+              <div class="home-action-icon-wrap">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 11.5C21 16.75 16.75 21 11.5 21C9.6 21 7.8 20.4 6.3 19.4L2 21L3.6 16.7C2.6 15.2 2 13.4 2 11.5C2 6.25 6.25 2 11.5 2C16.75 2 21 6.25 21 11.5Z" fill="#9333EA"/>
+                  <circle cx="12" cy="11.5" r="4.5" fill="white"/>
+                  <path d="M12 9.5V12L13.5 13.5" stroke="#9333EA" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <span class="home-action-label" data-i18n="btnFeedback">Feedback</span>
+            </button>
+
+            <!-- 5. Grievance -->
+            <button class="home-action-card card-pink" id="btn-portal-grievance" type="button">
+              <div class="home-action-icon-wrap">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <circle cx="9" cy="8" r="4" fill="#DB2777"/>
+                  <path d="M2 19C2 15.5 5 14 9 14C13 14 16 15.5 16 19" fill="#DB2777"/>
+                  <rect x="15" y="4" width="8" height="8" rx="2" fill="#DB2777"/>
+                  <text x="19" y="10.5" fill="white" font-size="7" font-weight="900" text-anchor="middle">?</text>
+                </svg>
+              </div>
+              <span class="home-action-label" data-i18n="btnGrievance">Grievance</span>
+            </button>
+
+            <!-- 6. Help Line -->
+            <button class="home-action-card card-teal" id="btn-portal-helpline" type="button">
+              <div class="home-action-icon-wrap">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0D9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                  <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+                </svg>
+              </div>
+              <span class="home-action-label" data-i18n="btnHelpLine">Help Line</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Settings Full Width Row -->
+        <button class="card home-settings-row" id="btn-portal-settings" data-screen-target="accessibility-view" type="button">
+          <div class="home-settings-left">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span class="home-settings-label" data-i18n="btnSettings">Settings</span>
+          </div>
+          <span class="home-settings-arrow">›</span>
+        </button>
+      </section>
+
+      <!-- ===================================================================
+           SCREEN 3: BUS ROUTES NETWORK (CORRIDORS & FLEET)
+           =================================================================== -->
+      <section id="routes-view" class="screen-view">
+        <!-- Routes Network Hero / Stats Header -->
+        <div class="card routes-hero-card">
+          <div class="flex-between routes-hero-header">
+            <div>
+              <div class="flex-align gap-2 mb-1">
+                <span class="badge badge-blue">MSRTC Network</span>
+                <span class="badge badge-green">● 8 Corridors Active</span>
+              </div>
+              <h2 class="card-title" data-i18n="routesTitle">MSRTC Bus Routes</h2>
+              <div class="text-sm text-secondary" data-i18n="routesSubtitle">
+                Explore corridors, intermediate stops & live running buses
+              </div>
+            </div>
+            <div class="routes-hero-icon-wrap">
+              <span class="routes-hero-badge-icon">🛣️</span>
+            </div>
+          </div>
+
+          <!-- Network Summary Metrics Strip -->
+          <div class="routes-summary-strip">
+            <div class="route-summary-stat">
+              <span class="stat-number" id="routes-stat-count">8</span>
+              <span class="stat-label">Routes</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="route-summary-stat">
+              <span class="stat-number" id="routes-stat-buses">45</span>
+              <span class="stat-label">Live Buses</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="route-summary-stat">
+              <span class="stat-number" id="routes-stat-stops">204</span>
+              <span class="stat-label">Waypoints</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="route-summary-stat">
+              <span class="stat-number">100%</span>
+              <span class="stat-label">GPS Tracked</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Routes Search & Category Filters -->
+        <div class="routes-search-section">
+          <!-- Search Field -->
+          <div class="routes-search-input-wrap">
+            <span class="routes-search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="routes-search-input" 
+              class="routes-search-field" 
+              placeholder="Search routes, stops, destinations (e.g. Yeola, Shirdi, Pune...)" 
+              data-i18n-placeholder="searchRoutesPlaceholder"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="button" id="btn-clear-routes-search" class="routes-search-clear-btn" style="display: none;" title="Clear search">✕</button>
+          </div>
+
+          <!-- Category Filter Pills -->
+          <div class="routes-filter-pills" id="routes-filter-pills">
+            <button class="routes-pill active" data-category="all" data-i18n="filterAllRoutes">All Routes (8)</button>
+            <button class="routes-pill" data-category="pilgrim" data-i18n="filterPilgrim">🛕 Pilgrim Special</button>
+            <button class="routes-pill" data-category="intercity" data-i18n="filterIntercity">⚡ Intercity Express</button>
+            <button class="routes-pill" data-category="rural" data-i18n="filterRural">🌾 Rural Highway</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Routes Cards Container -->
+        <div id="routes-cards-container" class="routes-cards-container">
+          <!-- Populated dynamically from app.js -->
         </div>
       </section>
 
@@ -195,8 +487,8 @@
           <div class="map-top-nav-banner">
             <div class="nav-banner-dot"></div>
             <div class="nav-banner-content">
-              <span id="map-banner-title">On Route to Niphad Bus Stand</span>
-              <span id="map-banner-sub">3.2 km • ~5 mins at current speed</span>
+              <span id="map-banner-title">Approaching Next Stop</span>
+              <span id="map-banner-sub">Calculating ETA...</span>
             </div>
           </div>
 
@@ -223,15 +515,15 @@
               <div class="label" data-i18n="speed">Speed</div>
             </div>
             <div class="telemetry-item">
-              <div class="value" id="track-dist">3.2 km</div>
+              <div class="value" id="track-dist">-- km</div>
               <div class="label" data-i18n="distance">Distance</div>
             </div>
             <div class="telemetry-item">
-              <div class="value" id="track-eta">5 mins</div>
+              <div class="value" id="track-eta">-- mins</div>
               <div class="label" data-i18n="eta">ETA</div>
             </div>
             <div class="telemetry-item">
-              <div class="value" id="track-confidence">98%</div>
+              <div class="value" id="track-confidence">Live</div>
               <div class="label">GPS Signal</div>
             </div>
           </div>
@@ -241,17 +533,17 @@
         <div class="card trip-info-overview-card">
           <div class="trip-overview-item">
             <div class="trip-overview-label">Previous stop</div>
-            <div class="trip-overview-value" id="trip-prev-stop">Chandori Stand</div>
+            <div class="trip-overview-value" id="trip-prev-stop">Previous Station</div>
           </div>
           <div class="trip-overview-divider"></div>
           <div class="trip-overview-item">
             <div class="trip-overview-label">Location Name</div>
-            <div class="trip-overview-value" id="trip-curr-loc">NH 753J Highway (Near Niphad)</div>
+            <div class="trip-overview-value" id="trip-curr-loc">En Route</div>
           </div>
           <div class="trip-overview-divider"></div>
           <div class="trip-overview-item">
             <div class="trip-overview-label">Next Stop</div>
-            <div class="trip-overview-value" id="trip-next-stop">Niphad Bus Stand</div>
+            <div class="trip-overview-value" id="trip-next-stop">Next Scheduled Stop</div>
           </div>
           <div class="trip-overview-divider"></div>
           <div class="trip-overview-item">
@@ -296,6 +588,20 @@
           </div>
         </div>
 
+        <!-- Contextual Reports in Bus Details -->
+        <div class="card bus-contextual-reports-card" id="bus-contextual-reports-card" data-screen-target="community-view" style="cursor:pointer; padding: 12px 16px; background: rgba(254, 243, 199, 0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-md);">
+          <div class="flex-between">
+            <div class="flex-align gap-2">
+              <span style="font-size: 16px;">📢</span>
+              <div>
+                <strong style="font-size: 13px;">Passenger Live Reports</strong>
+                <div class="text-sm" id="bus-detail-reports-count">Recent updates from commuters on this route</div>
+              </div>
+            </div>
+            <span class="text-sm text-primary" style="font-weight:700;">View ➔</span>
+          </div>
+        </div>
+
         <div class="card">
           <h3 class="card-subtitle">Intermediate Route Stops</h3>
           <div class="stops-timeline-list" id="intermediate-stops-list">
@@ -309,8 +615,8 @@
            =================================================================== -->
       <section id="stop-info-view" class="screen-view">
         <div class="card">
-          <h2 class="section-title" id="stop-info-title">Niphad Bus Stand</h2>
-          <p class="section-subtitle" id="stop-info-landmark">Landmark: Station Road, Near Sub-District Hospital & Market Yard, NH 753J</p>
+          <h2 class="section-title" id="stop-info-title">Bus Stop Facilities</h2>
+          <p class="section-subtitle" id="stop-info-landmark">Station amenities and emergency contacts</p>
         </div>
 
         <div class="card">
@@ -368,7 +674,7 @@
           <h2 class="card-title" data-i18n="journeyPlanner">Journey Planner</h2>
           <div class="search-box-wrap mt-2">
             <span class="search-icon-pos">🔍</span>
-            <input type="text" id="journey-dest-input" class="search-input" placeholder="Type destination e.g. Yeola, Niphad, Nashik, Shirdi..." />
+            <input type="text" id="journey-dest-input" class="search-input" placeholder="Enter destination e.g. Pune, Nashik CBS, Shirdi, Yeola..." />
           </div>
           <button class="btn btn-primary btn-lg mt-2" id="btn-search-journey" data-i18n="findBuses">
             Find Direct & Connecting Buses
@@ -443,7 +749,7 @@
 
           <div class="flex-between gap-2 mt-2">
             <button class="chip-btn lang-selector-btn" data-lang="mr">मराठी (Marathi)</button>
-            <button class="chip-btn lang-selector-btn" data-lang="en">English</button>
+            <button class="chip-btn lang-selector-btn active" data-lang="en">English</button>
             <button class="chip-btn lang-selector-btn" data-lang="hi">हिंदी (Hindi)</button>
           </div>
         </div>
@@ -549,29 +855,151 @@
         </div>
       </section>
 
+      <!-- ===================================================================
+           SCREEN 14: ACCOUNT
+           =================================================================== -->
+      <section id="account-view" class="screen-view">
+        <!-- Logged Out State -->
+        <div id="account-logged-out" class="account-state-wrap">
+          <div class="card text-center account-auth-hero">
+            <div class="account-avatar-placeholder">👤</div>
+            <h2 class="card-title mt-2" data-i18n="accountTitle">My Account</h2>
+            <p class="section-subtitle mt-1">Sign in to personalize your transit experience across devices.</p>
+            
+            <div class="flex-center gap-2 mt-3" style="display: flex; justify-content: center;">
+              <button class="btn btn-primary" id="btn-account-signin" data-i18n="signIn">Sign In</button>
+              <button class="btn btn-secondary" id="btn-account-signup" data-i18n="createAccount">Create Account</button>
+            </div>
+          </div>
+
+          <!-- Benefits Card -->
+          <div class="card">
+            <h3 class="card-subtitle">Account Benefits</h3>
+            <ul class="account-benefits-list">
+              <li>
+                <span class="benefit-icon">⭐</span>
+                <div>
+                  <strong>Sync Favorite Stops</strong>
+                  <div class="text-sm">Access your daily stops on any phone or browser</div>
+                </div>
+              </li>
+              <li>
+                <span class="benefit-icon">🔔</span>
+                <div>
+                  <strong>Save Alert Preferences</strong>
+                  <div class="text-sm">Customize bus arrival and delay notifications</div>
+                </div>
+              </li>
+              <li>
+                <span class="benefit-icon">📢</span>
+                <div>
+                  <strong>My Submitted Reports</strong>
+                  <div class="text-sm">Track commuter feedback and helpful upvotes</div>
+                </div>
+              </li>
+              <li>
+                <span class="benefit-icon">⚙️</span>
+                <div>
+                  <strong>Cross-Device Settings</strong>
+                  <div class="text-sm">Keep your language and accessibility preferences</div>
+                </div>
+              </li>
+            </ul>
+            <div class="account-reassurance-note mt-3">
+              🛡️ <strong>No account required:</strong> You can always scan QR codes, view live buses, and check timetables freely without signing in.
+            </div>
+          </div>
+        </div>
+
+        <!-- Logged In State -->
+        <div id="account-logged-in" class="account-state-wrap" style="display: none;">
+          <div class="card">
+            <div class="account-profile-header">
+              <div class="account-profile-avatar" id="account-user-avatar">👤</div>
+              <div>
+                <h2 class="account-user-name" id="account-user-name">Passenger Name</h2>
+                <div class="account-user-phone" id="account-user-phone">+91 98XXX XXXXX</div>
+                <span class="badge badge-green mt-1">✓ MSRTC Daily Commuter</span>
+              </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="account-stats-row mt-3">
+              <div class="account-stat-item">
+                <div class="stat-num" id="account-stat-favorites">0</div>
+                <div class="stat-lbl">Saved Stops</div>
+              </div>
+              <div class="account-stat-divider"></div>
+              <div class="account-stat-item">
+                <div class="stat-num" id="account-stat-reports">0</div>
+                <div class="stat-lbl">Reports Given</div>
+              </div>
+              <div class="account-stat-divider"></div>
+              <div class="account-stat-item">
+                <div class="stat-num">Active</div>
+                <div class="stat-lbl">Status</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Account Settings List -->
+          <div class="card account-menu-card">
+            <button class="account-menu-item" id="account-menu-favorites">
+              <span class="item-icon">⭐</span>
+              <span class="item-label">Manage Favorite Stops</span>
+              <span class="item-arrow">➔</span>
+            </button>
+            <button class="account-menu-item" data-screen-target="notifications-view">
+              <span class="item-icon">🔔</span>
+              <span class="item-label">Alerts & Notifications</span>
+              <span class="item-arrow">➔</span>
+            </button>
+            <button class="account-menu-item" id="account-menu-my-reports">
+              <span class="item-icon">📢</span>
+              <span class="item-label">My Community Reports</span>
+              <span class="item-arrow">➔</span>
+            </button>
+            <button class="account-menu-item" data-screen-target="accessibility-view">
+              <span class="item-icon">🌐</span>
+              <span class="item-label">App Language</span>
+              <span class="item-arrow">➔</span>
+            </button>
+            <button class="account-menu-item" data-screen-target="accessibility-view">
+              <span class="item-icon">♿</span>
+              <span class="item-label">Accessibility Settings</span>
+              <span class="item-arrow">➔</span>
+            </button>
+          </div>
+
+          <button class="btn btn-secondary w-full mt-3" id="btn-account-signout" data-i18n="signOut">
+            🚪 Sign Out
+          </button>
+        </div>
+      </section>
+
     </main>
 
     <!-- Bottom Navigation Bar -->
     <nav class="bottom-nav">
       <button class="nav-item active" data-screen-target="home-view">
-        <span class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V17C3 18.1 3.9 19 5 19H6.5"/><path d="M17.5 19H19C20.1 19 21 18.1 21 17V7C21 5.9 20.1 5 19 5H5C3.9 5 3 5.9 3 7"/><circle cx="7.5" cy="19" r="2"/><circle cx="16.5" cy="19" r="2"/><path d="M9.5 19H14.5"/><path d="M3 12H21"/></svg></span>
-        <span>Stop</span>
+        <span class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+        <span data-i18n="navHome">Home</span>
       </button>
       <button class="nav-item" data-screen-target="tracking-view">
         <span class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></span>
-        <span>Live Map</span>
+        <span data-i18n="navLiveMap">Live Map</span>
       </button>
-      <button class="nav-item" data-screen-target="schedule-view">
-        <span class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-        <span>Schedule</span>
+      <button class="nav-item" data-screen-target="scanner-view" id="nav-scanner-btn">
+        <span class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="8" y="8" width="8" height="8" rx="1.5"/><line x1="4" y1="12" x2="20" y2="12"/></svg></span>
+        <span data-i18n="navScanner">Scan QR</span>
       </button>
       <button class="nav-item" data-screen-target="planner-view">
         <span class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-        <span>Planner</span>
+        <span data-i18n="navPlanner">Planner</span>
       </button>
-      <button class="nav-item" data-screen-target="community-view">
-        <span class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-        <span>Reports</span>
+      <button class="nav-item" data-screen-target="account-view">
+        <span class="nav-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <span data-i18n="navAccount">Account</span>
       </button>
     </nav>
 
@@ -604,6 +1032,443 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal for Feedback Submission -->
+  <div class="modal-backdrop" id="feedback-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title">Passenger Feedback</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="mt-4">
+        <label class="label-text">Feedback Category:</label>
+        <select id="feedback-category-select" class="search-input mt-2 select-input">
+          <option value="bug">🐛 Bug / Technical Problem</option>
+          <option value="wrong_bus">🚌 Wrong Bus Information</option>
+          <option value="wrong_stop">🚏 Wrong Stop Information</option>
+          <option value="feature">💡 Suggest a Feature</option>
+          <option value="general">📝 General Feedback</option>
+        </select>
+
+        <label class="label-text-block">Your Message / Experience:</label>
+        <textarea id="feedback-message-input" class="search-input mt-2 select-input" rows="3" placeholder="Tell us what happened or how we can improve..." style="resize: vertical; height: 80px;"></textarea>
+
+        <label class="label-text-block">Contact Email or Phone (Optional):</label>
+        <input type="text" id="feedback-contact-input" class="search-input mt-2 select-input" placeholder="e.g. 9820012345 or email@domain.com" />
+
+        <button class="btn btn-primary btn-lg w-full mt-4" id="btn-submit-feedback">
+          Submit Feedback
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Sign In / Registration -->
+  <div class="modal-backdrop" id="auth-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title" id="auth-modal-title">Sign In</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="auth-tabs flex-between mt-3" style="gap: 8px;">
+        <button class="btn btn-sm btn-primary active" id="auth-tab-signin" style="flex:1;">Sign In</button>
+        <button class="btn btn-sm btn-secondary" id="auth-tab-signup" style="flex:1;">Create Account</button>
+      </div>
+
+      <form id="auth-form" class="mt-3">
+        <div id="auth-name-group" style="display: none;">
+          <label class="label-text">Full Name:</label>
+          <input type="text" id="auth-name-input" class="search-input mt-1 select-input" placeholder="e.g. Ramesh Patil" />
+        </div>
+
+        <label class="label-text-block">Mobile Number or Email:</label>
+        <input type="text" id="auth-contact-input" class="search-input mt-1 select-input" placeholder="e.g. 9822012345 or user@email.com" required />
+
+        <label class="label-text-block">Password or 4-Digit PIN:</label>
+        <input type="password" id="auth-password-input" class="search-input mt-1 select-input" placeholder="••••" required />
+
+        <button type="submit" class="btn btn-primary btn-lg w-full mt-4" id="btn-auth-submit">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for Adding Favorite Stop -->
+  <div class="modal-backdrop" id="add-favorite-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title">Add Favorite Bus Stop</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="mt-3">
+        <input type="text" id="favorite-search-input" class="search-input select-input" placeholder="Type station name (e.g. Yeola, Chandori, Niphad)..." />
+        <div id="favorite-search-results" class="favorite-search-results mt-2" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+          <!-- Dynamically populated candidate stops -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for How It Works Guide -->
+  <div class="modal-backdrop" id="how-it-works-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title">How Where's My Bus? Works</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="how-it-works-steps mt-3" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="how-step-item" style="display: flex; gap: 12px; align-items: flex-start;">
+          <div class="how-step-badge" style="background: var(--primary-blue); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">1</div>
+          <div>
+            <strong>Scan Bus Stop QR</strong>
+            <p class="text-sm">Scan the official MSRTC QR code on the bus stand board with your phone camera.</p>
+          </div>
+        </div>
+        <div class="how-step-item" style="display: flex; gap: 12px; align-items: flex-start;">
+          <div class="how-step-badge" style="background: var(--primary-blue); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">2</div>
+          <div>
+            <strong>See Live Arrivals</strong>
+            <p class="text-sm">View real-time countdown, distance, delay status, and seat availability.</p>
+          </div>
+        </div>
+        <div class="how-step-item" style="display: flex; gap: 12px; align-items: flex-start;">
+          <div class="how-step-badge" style="background: var(--primary-blue); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">3</div>
+          <div>
+            <strong>Track on Highway Map</strong>
+            <p class="text-sm">Follow your bus on the live GPS map so you know exactly when to board.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  <!-- Modal for Ticket Booking -->
+  <div class="modal-backdrop" id="ticket-booking-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title">Book Bus Ticket</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="mt-3">
+        <label class="label-text">From (Origin Station):</label>
+        <select id="booking-from-select" class="search-input mt-1 select-input">
+          <option value="Nashik Old CBS">Nashik Old CBS (नाशिक जुने सी.बी.एस.)</option>
+          <option value="Shalimar Chowk">Shalimar Chowk (शालिमार)</option>
+          <option value="Chandori">Chandori (चांदोरी)</option>
+          <option value="Niphad Bus Stand">Niphad Bus Stand (निफाड)</option>
+          <option value="Yeola Bus Stand">Yeola Bus Stand (येवला)</option>
+        </select>
+
+        <label class="label-text-block">To (Destination Station):</label>
+        <select id="booking-to-select" class="search-input mt-1 select-input">
+          <option value="Yeola Bus Stand">Yeola Bus Stand (येवला)</option>
+          <option value="Niphad Bus Stand">Niphad Bus Stand (निफाड)</option>
+          <option value="Chandori">Chandori (चांदोरी)</option>
+          <option value="Nashik Old CBS">Nashik Old CBS (नाशिक जुने सी.बी.एस.)</option>
+        </select>
+
+        <div class="flex-between gap-2 mt-2">
+          <div style="flex:1;">
+            <label class="label-text">Journey Date:</label>
+            <input type="date" id="booking-date-input" class="search-input mt-1 select-input" />
+          </div>
+          <div style="flex:1;">
+            <label class="label-text">Passengers:</label>
+            <select id="booking-passengers-select" class="search-input mt-1 select-input">
+              <option value="1">1 Passenger</option>
+              <option value="2">2 Passengers</option>
+              <option value="3">3 Passengers</option>
+              <option value="4">4 Passengers</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg w-full mt-4" id="btn-proceed-booking">
+          Search Available Buses ➔
+        </button>
+
+        <div class="p-2 mt-3 text-center text-xs" style="background: rgba(14,165,233,0.06); border-radius: 8px; color: var(--text-secondary);">
+          Official MSRTC online reservation counter: <strong>msrtc.maharashtra.gov.in</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Viewing Saved / Active Tickets -->
+  <div class="modal-backdrop" id="view-tickets-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title">View Tickets</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="mt-3">
+        <!-- Active e-Ticket Card -->
+        <div class="card" style="border-left: 5px solid var(--status-green); padding: 14px; background: var(--bg-main);">
+          <div class="flex-between">
+            <span class="badge badge-green">Confirmed / Active</span>
+            <span class="text-xs" style="font-weight: 700; color: var(--text-secondary);">PNR: MSRTC-89210-YEO</span>
+          </div>
+
+          <div class="mt-2" style="font-size: 16px; font-weight: 800; color: var(--text-main);">
+            Nashik CBS ➔ Yeola Bus Stand
+          </div>
+          <div class="text-xs text-secondary mt-1">
+            🚌 Lal Dabba Ordinary Express (MH 15 EG 4021)
+          </div>
+
+          <div class="flex-between mt-3 p-2" style="background: var(--bg-card); border-radius: 8px; border: 1px dashed var(--border-subtle);">
+            <div>
+              <div class="text-xs" style="color: var(--text-secondary);">Date & Time</div>
+              <div style="font-weight: 700; font-size: 13px;">Today · 08:00 AM</div>
+            </div>
+            <div>
+              <div class="text-xs" style="color: var(--text-secondary);">Seat No.</div>
+              <div style="font-weight: 700; font-size: 13px; color: var(--primary-blue);">Seat 14 (Window)</div>
+            </div>
+            <div>
+              <div class="text-xs" style="color: var(--text-secondary);">Fare Paid</div>
+              <div style="font-weight: 700; font-size: 13px; color: var(--status-green);">₹65.00</div>
+            </div>
+          </div>
+
+          <button class="btn btn-outline-primary btn-sm w-full mt-3" id="btn-show-ticket-qr">
+            📱 Show Conductor Verification QR
+          </button>
+        </div>
+
+        <button class="btn btn-secondary w-full mt-3" id="btn-book-new-ticket-from-view">
+          + Book Another Ticket
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for My Pass -->
+  <div class="modal-backdrop" id="my-pass-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title">My Pass</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="mt-3">
+        <div class="card" style="background: linear-gradient(135deg, #0284C7, #0369A1); color: white; padding: 16px; border-radius: 16px; box-shadow: 0 10px 25px rgba(2,132,199,0.3);">
+          <div class="flex-between">
+            <span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; opacity: 0.9;">MSRTC SMART COMMUTER PASS</span>
+            <span class="badge" style="background: #10B981; color: white;">ACTIVE</span>
+          </div>
+
+          <div style="margin-top: 14px;">
+            <div style="font-size: 18px; font-weight: 800;">Monthly Student Pass</div>
+            <div style="font-size: 12px; opacity: 0.85;">Route: Niphad ⇄ Nashik CBS</div>
+          </div>
+
+          <div class="flex-between mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.2); font-size: 11px;">
+            <div>
+              <div style="opacity: 0.8;">Pass ID</div>
+              <div style="font-weight: 700;">MST-2026-NSK-4912</div>
+            </div>
+            <div>
+              <div style="opacity: 0.8;">Valid Till</div>
+              <div style="font-weight: 700;">31 Dec 2026</div>
+            </div>
+            <div>
+              <div style="opacity: 0.8;">Discount</div>
+              <div style="font-weight: 700;">66.6% Subsidized</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-between gap-2 mt-3">
+          <button class="btn btn-outline-primary btn-sm" style="flex:1;" id="btn-renew-pass">
+            🔄 Renew Pass
+          </button>
+          <button class="btn btn-secondary btn-sm" style="flex:1;" id="btn-download-pass">
+            📥 Save Pass
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Apply Offline Pass -->
+  <div class="modal-backdrop" id="offline-pass-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title">Apply Offline Bus Pass</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="mt-3" style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+        <div class="card" style="padding: 12px; border-left: 4px solid var(--primary-blue);">
+          <strong style="font-size: 14px;">1. Available Concessions</strong>
+          <ul style="margin: 6px 0 0 16px; line-height: 1.5; color: var(--text-secondary);">
+            <li><strong>Student Pass:</strong> 66.6% concession for school & college students.</li>
+            <li><strong>Senior Citizens:</strong> 100% free travel above 75 yrs (Amrut Yojana), 50% for 65-74 yrs.</li>
+            <li><strong>Monthly Season Ticket (MST):</strong> 33.3% savings for regular daily commuters.</li>
+          </ul>
+        </div>
+
+        <div class="card" style="padding: 12px; border-left: 4px solid var(--accent-orange);">
+          <strong style="font-size: 14px;">2. Required Documents</strong>
+          <ul style="margin: 6px 0 0 16px; line-height: 1.5; color: var(--text-secondary);">
+            <li>2 Passport-size photographs.</li>
+            <li>Copy of Aadhaar Card.</li>
+            <li>College / School Principal bonafide certificate (for students).</li>
+            <li>Age verification certificate (for senior citizens).</li>
+          </ul>
+        </div>
+
+        <div class="card" style="padding: 12px; border-left: 4px solid var(--status-green);">
+          <strong style="font-size: 14px;">3. Nearest Pass Counters</strong>
+          <p class="text-secondary mt-1">Visit your nearest bus stand pass counter (Mon–Sat, 9:00 AM – 5:00 PM):</p>
+          <div style="font-weight: 700; margin-top: 4px;">• Nashik Old CBS Depot — Counter 4</div>
+          <div style="font-weight: 700;">• Niphad Bus Stand — Office Counter</div>
+          <div style="font-weight: 700;">• Yeola Bus Stand — Enquiry Office</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Help Line -->
+  <div class="modal-backdrop" id="helpline-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title">Emergency & Help Line</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="mt-3" style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="tel:1800221250" class="btn btn-outline-primary" style="justify-content: flex-start; padding: 12px 14px; text-decoration: none;">
+          <span style="font-size: 20px; margin-right: 10px;">📞</span>
+          <div style="text-align: left;">
+            <div style="font-weight: 800; font-size: 14px;">1800-22-1250 (Toll-Free)</div>
+            <div class="text-xs" style="color: var(--text-secondary);">24x7 MSRTC Central Helpline & Complaints</div>
+          </div>
+        </a>
+
+        <a href="tel:02532309310" class="btn btn-secondary" style="justify-content: flex-start; padding: 12px 14px; text-decoration: none;">
+          <span style="font-size: 20px; margin-right: 10px;">🏢</span>
+          <div style="text-align: left;">
+            <div style="font-weight: 800; font-size: 14px;">0253-2309310</div>
+            <div class="text-xs" style="color: var(--text-secondary);">Nashik Division Traffic Control Room</div>
+          </div>
+        </a>
+
+        <a href="tel:02559267033" class="btn btn-secondary" style="justify-content: flex-start; padding: 12px 14px; text-decoration: none;">
+          <span style="font-size: 20px; margin-right: 10px;">🚏</span>
+          <div style="text-align: left;">
+            <div style="font-weight: 800; font-size: 14px;">02559-267033</div>
+            <div class="text-xs" style="color: var(--text-secondary);">Yeola Bus Stand Inquiry & Station Master</div>
+          </div>
+        </a>
+
+        <div class="flex-between gap-2 mt-2">
+          <a href="tel:112" class="btn btn-outline-danger" style="flex:1; padding: 10px; font-size: 13px; text-decoration: none; text-align: center;">
+            🚨 Police: 112
+          </a>
+          <a href="tel:108" class="btn btn-outline-danger" style="flex:1; padding: 10px; font-size: 13px; text-decoration: none; text-align: center;">
+            🚑 Ambulance: 108
+          </a>
+          <a href="tel:1090" class="btn btn-outline-danger" style="flex:1; padding: 10px; font-size: 13px; text-decoration: none; text-align: center;">
+            👩 Women: 1090
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Home My Favourites -->
+  <div class="modal-backdrop" id="home-favorites-modal">
+    <div class="modal-drawer">
+      <div class="flex-between">
+        <h3 class="modal-title">⭐ My Favourites</h3>
+        <button class="icon-btn modal-close-trigger">✕</button>
+      </div>
+
+      <div class="mt-3">
+        <div id="portal-favorites-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto;">
+          <!-- Dynamically populated favorite stops -->
+        </div>
+
+        <button class="btn btn-outline-primary btn-sm w-full mt-3" id="btn-portal-add-favorite">
+          + Add Favorite Bus Stop
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Side Drawer (Hamburger Menu) -->
+  <div class="drawer-backdrop" id="side-drawer-backdrop"></div>
+  <aside class="side-drawer" id="side-drawer">
+    <div class="drawer-header">
+      <div class="drawer-brand">
+        <img src="assets/logo.png" alt="Where's My Bus? Logo" class="drawer-logo-img">
+        <div>
+          <h2 class="drawer-title">Where's My <span class="brand-accent">Bus?</span></h2>
+          <p class="drawer-tagline">KNOW BEFORE YOU WAIT.</p>
+        </div>
+      </div>
+      <button class="drawer-close-btn" id="drawer-close-btn">✕</button>
+    </div>
+    
+    <div class="drawer-nav-list">
+      <button class="drawer-link-item" data-screen-target="home-view">
+        <span class="drawer-item-icon">🏠</span>
+        <span class="drawer-item-label" data-i18n="navHome">Home</span>
+      </button>
+      <button class="drawer-link-item" data-screen-target="tracking-view">
+        <span class="drawer-item-icon">🗺️</span>
+        <span class="drawer-item-label" data-i18n="navLiveMap">Live Map</span>
+      </button>
+      <button class="drawer-link-item" data-screen-target="scanner-view">
+        <span class="drawer-item-icon">📷</span>
+        <span class="drawer-item-label" data-i18n="navScanner">Scan QR</span>
+      </button>
+      <button class="drawer-link-item" data-screen-target="routes-view">
+        <span class="drawer-item-icon">🛣️</span>
+        <span class="drawer-item-label" data-i18n="btnBusRoutes">Bus Routes</span>
+      </button>
+      <button class="drawer-link-item" data-screen-target="planner-view">
+        <span class="drawer-item-icon">🧭</span>
+        <span class="drawer-item-label" data-i18n="navPlanner">Journey Planner</span>
+      </button>
+      <button class="drawer-link-item" data-screen-target="schedule-view">
+        <span class="drawer-item-icon">📅</span>
+        <span class="drawer-item-label" data-i18n="btnTimeTable">Time Table</span>
+      </button>
+      <button class="drawer-link-item" data-screen-target="account-view">
+        <span class="drawer-item-icon">👤</span>
+        <span class="drawer-item-label" data-i18n="navAccount">My Account</span>
+      </button>
+      <button class="drawer-link-item" data-screen-target="voice-view">
+        <span class="drawer-item-icon">🔊</span>
+        <span class="drawer-item-label">Voice Announcements</span>
+      </button>
+      <button class="drawer-link-item" data-screen-target="accessibility-view">
+        <span class="drawer-item-icon">♿</span>
+        <span class="drawer-item-label">Accessibility & Display</span>
+      </button>
+      <hr class="drawer-divider">
+      <button class="drawer-link-item" id="drawer-btn-feedback">
+        <span class="drawer-item-icon">💬</span>
+        <span class="drawer-item-label" data-i18n="btnFeedback">Feedback</span>
+      </button>
+      <button class="drawer-link-item" id="drawer-btn-grievance">
+        <span class="drawer-item-icon">⚠️</span>
+        <span class="drawer-item-label" data-i18n="btnGrievance">Grievance</span>
+      </button>
+      <button class="drawer-link-item" id="drawer-btn-helpline">
+        <span class="drawer-item-icon">📞</span>
+        <span class="drawer-item-label" data-i18n="btnHelpLine">Help Line</span>
+      </button>
+    </div>
+  </aside>
 
   <!-- Leaflet Map Library JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
