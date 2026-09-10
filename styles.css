@@ -436,7 +436,7 @@ body.dark-mode .brand-tagline {
   gap: 8px;
 }
 
-/* Header Language Selector Pill (iOS Popover Trigger Style) */
+/* Header Language Selector Pill */
 .header-lang-wrap {
   position: relative;
 }
@@ -444,21 +444,31 @@ body.dark-mode .brand-tagline {
 .header-lang-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
   gap: 6px;
-  background: var(--apple-tint-subtle);
-  border: none;
+  background: var(--primary-blue-light);
+  border: 1.5px solid var(--primary-blue);
+  color: var(--primary-blue-hover);
   border-radius: var(--radius-full);
-  padding: 6px 13px;
   font-size: 13px;
-  font-weight: 600;
-  color: var(--apple-tint);
+  font-weight: 700;
   cursor: pointer;
   transition: all var(--transition-fast);
   font-family: inherit;
+  line-height: 1;
+}
+
+.header-lang-btn span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .header-lang-btn:hover {
-  background: rgba(0, 122, 255, 0.16);
+  background: var(--primary-blue);
+  color: #FFFFFF;
 }
 
 .header-lang-btn:active {
@@ -466,13 +476,26 @@ body.dark-mode .brand-tagline {
 }
 
 .header-lang-btn svg {
-  color: var(--apple-tint);
+  display: block;
+  flex-shrink: 0;
+  color: currentColor;
   transition: transform 0.2s ease;
 }
 
 .header-lang-wrap.open .header-lang-btn svg,
 .header-lang-menu.open ~ .header-lang-btn svg {
   transform: rotate(180deg);
+}
+
+body.dark-mode .header-lang-btn {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #38BDF8;
+  color: #38BDF8;
+}
+
+body.dark-mode .header-lang-btn:hover {
+  background: #0284C7;
+  color: #FFFFFF;
 }
 
 .header-lang-menu {
@@ -1044,7 +1067,7 @@ body.dark-mode .splash-hero-card {
 
 .splash-feat-pill {
   background-color: var(--bg-card);
-  padding: 8px 6px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
   font-size: 11px;
@@ -1052,6 +1075,21 @@ body.dark-mode .splash-hero-card {
   color: var(--text-secondary);
   opacity: 0;
   animation: fadeInSlide 0.4s ease-out forwards;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.splash-feat-pill svg {
+  flex-shrink: 0;
+  display: block;
+}
+
+.splash-feat-pill span {
+  display: inline-block;
+  line-height: 1.2;
 }
 
 .splash-feat-pill:nth-child(1) { animation-delay: 0.1s; }
@@ -4107,78 +4145,7 @@ body.dark-mode .account-stats-row {
    HOME TRANSPORTATION PORTAL (3-COLUMN BUTTON GRID FORMAT)
    -------------------------------------------------------------------------- */
 
-/* Header Language Switcher Dropdown (Replaces Accessibility button) */
-.header-lang-wrap {
-  position: relative;
-}
 
-.header-lang-btn {
-  background: var(--primary-blue-light);
-  border: 1.5px solid var(--primary-blue);
-  color: var(--primary-blue-hover);
-  font-size: 13px;
-  font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.header-lang-btn:hover {
-  background: var(--primary-blue);
-  color: #FFFFFF;
-}
-
-body.dark-mode .header-lang-btn {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: #38BDF8;
-  color: #38BDF8;
-}
-
-body.dark-mode .header-lang-btn:hover {
-  background: #0284C7;
-  color: #FFFFFF;
-}
-
-.header-lang-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  box-shadow: var(--shadow-lg);
-  display: none;
-  flex-direction: column;
-  min-width: 120px;
-  z-index: 150;
-  overflow: hidden;
-}
-
-.header-lang-menu.open {
-  display: flex;
-}
-
-.header-lang-option {
-  padding: 10px 14px;
-  background: none;
-  border: none;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  width: 100%;
-}
-
-.header-lang-option:hover {
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--primary-blue);
-}
 
 .home-buttons-grid {
   display: grid;

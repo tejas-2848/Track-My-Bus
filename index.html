@@ -45,7 +45,7 @@
         <div class="header-lang-wrap" id="header-lang-wrap">
           <button class="header-lang-btn" id="header-lang-dropdown-btn" type="button" aria-label="Select Language">
             <span id="header-current-lang-text">English</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="header-lang-menu" id="header-lang-menu">
             <button class="header-lang-option" data-lang="en" type="button">English</button>
@@ -77,34 +77,34 @@
             <div class="splash-title-wrap">
               <h1 data-i18n="appName">Track My <span class="brand-accent">Bus</span></h1>
               <p data-i18n="tagline">KNOW BEFORE YOU WAIT.</p>
-              <div class="splash-msrtc-text">
-                MSRTC Digital Bus Stop System | महाराष्ट्र शासन
+              <div class="splash-msrtc-text" data-i18n="splashMsrtc">
+                MSRTC Digital Bus Stop System
               </div>
             </div>
 
             <div class="splash-features-grid">
               <div class="splash-feat-pill">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span>Real-time GPS</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span data-i18n="featLiveBusLoc">Live Bus Location</span>
               </div>
               <div class="splash-feat-pill">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                <span>Live Tracking</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span data-i18n="featEstimatedArrival">Estimated Arrival</span>
               </div>
               <div class="splash-feat-pill">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                <span>Voice Alerts</span>
+                <span data-i18n="featVoiceAlerts">Voice Alerts</span>
               </div>
             </div>
 
-            <button class="btn btn-primary btn-lg" data-screen-target="home-view" data-i18n="exploreStopsBtn" id="btn-splash-explore">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 12 8"/></svg>
-              <span>Explore Bus Stops & Arrivals</span>
-            </button>
-
-            <button class="btn btn-secondary btn-lg" data-screen-target="scanner-view" data-i18n="scanQrBtn">
+            <button class="btn btn-primary btn-lg" data-screen-target="scanner-view" data-i18n="scanQrBtn" id="btn-splash-scan-qr">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
               <span>Scan Bus Stop QR</span>
+            </button>
+
+            <button class="btn btn-primary btn-lg" id="btn-splash-how-to-use" data-i18n="howToUseBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span>How To Use?</span>
             </button>
           </div>
 
@@ -1334,6 +1334,12 @@
             <p class="text-sm">Follow your bus on the live GPS map so you know exactly when to board.</p>
           </div>
         </div>
+      </div>
+
+      <div class="mt-4">
+        <button class="btn btn-primary btn-lg w-full modal-close-trigger" data-screen-target="home-view" data-i18n="exploreDashboardBtn">
+          Explore Dashboard
+        </button>
       </div>
     </div>
   </div>

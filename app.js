@@ -4897,6 +4897,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btnPortalHelpline.addEventListener('click', () => openModal('helpline-modal'));
     }
 
+    const btnSplashHowToUse = document.getElementById('btn-splash-how-to-use');
+    if (btnSplashHowToUse) {
+      btnSplashHowToUse.addEventListener('click', () => openModal('how-it-works-modal', btnSplashHowToUse));
+    }
+
     // 11. New Modal Actions
     const btnProceedBooking = document.getElementById('btn-proceed-booking');
     if (btnProceedBooking) {
