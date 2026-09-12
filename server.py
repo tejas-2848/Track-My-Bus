@@ -210,7 +210,28 @@ class TransitServerHandler(SimpleHTTPRequestHandler):
 
         self.send_error(404, "Endpoint not found")
 
+def start_https_server(port=8443):
+    cert_path = os.path.join(BASE_DIR, "cert.pem")
+    key_path = os.path.join(BASE_DIR, "key.pem")
+    if os.path.exists(cert_path) and os.path.exists(key_path):
+        try:
+            import ssl
+            import threading
+            https_address = ("", port)
+            httpsd = HTTPServer(https_address, TransitServerHandler)
+            ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ssl_ctx.load_cert_chain(certfile=cert_path, keyfile=key_path)
+            httpsd.socket = ssl_ctx.wrap_socket(httpsd.socket, server_side=True)
+            print(f"Track My Bus HTTPS Server running on https://localhost:{port}")
+            t = threading.Thread(target=httpsd.serve_forever, daemon=True)
+            t.start()
+            return httpsd
+        except Exception as e:
+            print(f"Could not start HTTPS server: {e}")
+    return None
+
 if __name__ == "__main__":
+    start_https_server(8443)
     server_address = ("", PORT)
     httpd = HTTPServer(server_address, TransitServerHandler)
     print(f"Track My Bus Server running on http://localhost:{PORT}")
@@ -218,3 +239,4 @@ if __name__ == "__main__":
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass
+
