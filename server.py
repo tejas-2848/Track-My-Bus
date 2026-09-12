@@ -14,20 +14,26 @@ CACHE_DIR = os.path.join(BASE_DIR, "audio_cache")
 if not os.path.exists(CACHE_DIR):
     os.makedirs(CACHE_DIR, exist_ok=True)
 
-def load_env_key():
-    key = os.environ.get("GEMINI_API_KEY")
-    if key:
-        return key.strip()
+def load_env_var(var_name):
+    val = os.environ.get(var_name)
+    if val:
+        return val.strip()
     env_path = os.path.join(BASE_DIR, ".env")
     if os.path.exists(env_path):
         with open(env_path, "r", encoding="utf-8-sig") as f:
             for line in f:
                 line = line.strip()
-                if line.startswith("GEMINI_API_KEY="):
-                    val = line.split("=", 1)[1].strip().strip('"').strip("'")
-                    if val:
-                        return val
+                if line.startswith(f"{var_name}="):
+                    v = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    if v:
+                        return v
     return None
+
+def load_env_key():
+    return load_env_var("GEMINI_API_KEY")
+
+def load_maps_key():
+    return load_env_var("GOOGLE_MAPS_API_KEY")
 
 def pcm_to_wav(pcm_bytes, sample_rate=24000, num_channels=1, bit_depth=16):
     byte_rate = sample_rate * num_channels * (bit_depth // 8)
@@ -99,12 +105,21 @@ class TransitServerHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=BASE_DIR, **kwargs)
 
-    def do_OPTIONS(self):
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
+    def do_GET(self):
+        if self.path == "/api/config":
+            gemini_key = load_env_key()
+            maps_key = load_maps_key()
+            resp = json.dumps({
+                "geminiConfigured": bool(gemini_key),
+                "googleMapsKey": maps_key or ""
+            }).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(resp)
+            return
+        super().do_GET()
 
     def do_POST(self):
         if self.path == "/api/tts":

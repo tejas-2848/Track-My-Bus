@@ -9,8 +9,7 @@
   <link rel="icon" type="image/png" href="assets/logo.png">
   <link rel="apple-touch-icon" href="assets/logo.png">
   
-  <!-- Leaflet Map CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Google Maps Platform Container Styles are defined in styles.css -->
 
   <!-- App Stylesheet -->
   <link rel="stylesheet" href="styles.css">
@@ -533,7 +532,7 @@
 
           <!-- Category Filter Pills -->
           <div class="routes-filter-pills" id="routes-filter-pills">
-            <button class="routes-pill active" data-category="all" data-i18n="filterAllRoutes">All Routes (8)</button>
+            <button class="routes-pill active" data-category="all" data-i18n="filterAllRoutes">All Routes</button>
             <button class="routes-pill" data-category="pilgrim" data-i18n="filterPilgrim">Pilgrim Special</button>
             <button class="routes-pill" data-category="intercity" data-i18n="filterIntercity">Intercity Express</button>
             <button class="routes-pill" data-category="rural" data-i18n="filterRural">Rural Highway</button>
@@ -590,7 +589,7 @@
 
         <!-- Google Maps Style Interactive Container -->
         <div class="map-container-wrap">
-          <div id="leaflet-map"></div>
+          <div id="google-map"></div>
 
           <!-- Top Live Route Navigation Banner -->
           <div class="map-top-nav-banner">
@@ -610,7 +609,7 @@
                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
               </svg>
             </button>
-            <button class="map-ctrl-btn" id="btn-toggle-map-layer" title="Switch Map Layer (OSM / Esri / Satellite)">
+            <button class="map-ctrl-btn" id="btn-toggle-map-layer" title="Switch Map Type (Roadmap / Satellite / Hybrid / Terrain)">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="12 2 2 7 12 12 22 7 12 2"/>
                 <polyline points="2 17 12 22 22 17"/>
@@ -802,13 +801,35 @@
       <section id="planner-view" class="screen-view">
         <div class="card">
           <h2 class="card-title" data-i18n="journeyPlanner">Journey Planner</h2>
+          <p class="section-subtitle">Plan direct and connecting MSRTC journeys across Maharashtra with transfer hubs.</p>
+          
           <div class="search-box-wrap mt-2">
             <svg class="search-icon-pos" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
             </svg>
-            <input type="text" id="journey-dest-input" class="search-input" placeholder="Enter destination e.g. Pune, Nashik CBS, Shirdi, Yeola..." />
+            <input type="text" id="journey-origin-input" class="search-input" placeholder="From: Current Stop or enter town..." />
           </div>
+
+          <div class="search-box-wrap mt-2">
+            <svg class="search-icon-pos" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              <circle cx="12" cy="9" r="2.5"/>
+            </svg>
+            <input type="text" id="journey-dest-input" class="search-input" placeholder="To: Destination e.g. Yeola, Lasalgaon, Pune, Mumbai, Dhule..." />
+          </div>
+
+          <div class="planner-chips-wrap mt-2" style="display:flex; flex-wrap:wrap; gap:6px;">
+            <button type="button" class="btn-planner-chip" data-dest="Yeola">Yeola</button>
+            <button type="button" class="btn-planner-chip" data-dest="Lasalgaon">Lasalgaon</button>
+            <button type="button" class="btn-planner-chip" data-dest="Pune">Pune</button>
+            <button type="button" class="btn-planner-chip" data-dest="Mumbai Dadar">Mumbai Dadar</button>
+            <button type="button" class="btn-planner-chip" data-dest="Dhule">Dhule</button>
+            <button type="button" class="btn-planner-chip" data-dest="Kopargaon">Kopargaon</button>
+            <button type="button" class="btn-planner-chip" data-dest="Shirdi">Shirdi</button>
+            <button type="button" class="btn-planner-chip" data-dest="Sambhajinagar">Sambhajinagar</button>
+          </div>
+
           <button class="btn btn-primary btn-lg mt-2" id="btn-search-journey" data-i18n="findBuses">
             Find Direct & Connecting Buses
           </button>
@@ -1748,8 +1769,29 @@
     </div>
   </aside>
 
-  <!-- Leaflet Map Library JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Google Maps Platform Dynamic SDK Loader -->
+  <script>
+    window.loadGoogleMapsSdk = function(apiKey) {
+      if (window.google && window.google.maps && window.google.maps.importLibrary) {
+        return Promise.resolve(window.google.maps);
+      }
+      return new Promise((resolve, reject) => {
+        const options = {
+          v: "weekly",
+          region: "IN",
+          language: "en"
+        };
+        if (apiKey) {
+          options.key = apiKey;
+        }
+        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})(options);
+
+        window.google.maps.importLibrary("maps").then(() => {
+          resolve(window.google.maps);
+        }).catch(reject);
+      });
+    };
+  </script>
 
   <!-- Application Scripts -->
   <script src="data.js"></script>

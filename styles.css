@@ -1760,9 +1760,12 @@ body.dark-mode .tracking-header-card .section-title {
   box-shadow: var(--shadow-md);
 }
 
-#leaflet-map {
+#leaflet-map,
+#google-map {
   width: 100%;
   height: 100%;
+  min-height: 440px;
+  position: relative;
   z-index: 1;
 }
 
@@ -2123,13 +2126,115 @@ body.dark-mode .telemetry-item .value {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
 }
 
-/* Leaflet Custom Popup Styling for Bus Info */
-.leaflet-popup-content-wrapper {
+/* Leaflet & Google Maps Custom Popup / InfoWindow Styling */
+.leaflet-popup-content-wrapper,
+.gm-style .gm-style-iw-c {
   border-radius: var(--radius-md) !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22) !important;
   border: 1px solid var(--border-subtle) !important;
   font-family: 'Poppins', 'Inter', sans-serif !important;
   padding: 4px !important;
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+.gm-style .gm-style-iw-d {
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.gm-style .gm-style-iw-tc::after {
+  background: var(--bg-card) !important;
+}
+
+.gm-style .gm-ui-hover-effect {
+  top: 4px !important;
+  right: 4px !important;
+}
+
+/* Google Maps Key Setup Modal Overlay */
+.gmp-key-prompt-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.gmp-key-card {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: var(--radius-lg, 16px);
+  padding: 24px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
+  color: var(--text-primary, #0f172a);
+}
+
+.gmp-key-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gmp-key-desc {
+  font-size: 12px;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.gmp-key-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.gmp-key-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--border-subtle, #cbd5e1);
+  background: var(--bg-main, #f8fafc);
+  color: var(--text-primary, #0f172a);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.gmp-key-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--primary, #EF4444);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.gmp-key-btn:hover {
+  opacity: 0.9;
+}
+
+.gmp-key-links {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.6;
+}
+
+.gmp-key-links a {
+  color: #3B82F6;
+  text-decoration: underline;
 }
 
 .bus-map-popup-card {
@@ -2789,6 +2894,62 @@ body.dark-mode .trip-bus-inline-badge {
   transform: translateY(-50%);
   font-size: 18px;
   color: var(--text-muted);
+}
+
+.btn-planner-chip {
+  padding: 6px 14px;
+  background: var(--bg-main, #f1f5f9);
+  border: 1px solid var(--border-subtle, #cbd5e1);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-planner-chip:hover {
+  background: var(--primary-blue, #2563eb);
+  color: #ffffff;
+  border-color: var(--primary-blue, #2563eb);
+}
+
+.connecting-leg-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-top: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.transfer-hub-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin: 6px 0;
+  background: rgba(245, 158, 11, 0.12);
+  border-left: 3px solid #f59e0b;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: #b45309;
+}
+
+body.dark-mode .transfer-hub-divider {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+body.dark-mode .btn-planner-chip {
+  background: #1e293b;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+body.dark-mode .btn-planner-chip:hover {
+  background: #3b82f6;
+  color: #ffffff;
 }
 
 /* --------------------------------------------------------------------------
