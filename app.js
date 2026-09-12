@@ -24,15 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     isGpsActive: false,
     isGpsOutOfRegion: false,
     isManualLocation: false,
-    calibratedStop: (() => {
-      try {
-        const savedId = localStorage.getItem('wmb_calibrated_stop_id');
-        if (savedId && typeof SMART_ST_DATA !== 'undefined' && SMART_ST_DATA.busStops) {
-          return SMART_ST_DATA.busStops.find(s => s.id === savedId) || null;
-        }
-      } catch(e) {}
-      return null;
-    })(),
+    calibratedStop: null,
     currentUser: (() => {
       try { return JSON.parse(localStorage.getItem('wmb_currentUser')) || null; } catch(e) { return null; }
     })(),
@@ -928,6 +920,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (isForceRefine) {
+      state.calibratedStop = null;
+      state.isManualLocation = false;
+      try { localStorage.removeItem('wmb_calibrated_stop_id'); } catch(e) {}
+    }
+
     if (activeGpsWatcher !== null) {
       try { navigator.geolocation.clearWatch(activeGpsWatcher); } catch(e) {}
       activeGpsWatcher = null;
@@ -948,7 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (acc <= 30) quality = 'high';
       else if (acc <= 100) quality = 'medium';
 
-      if (acc < bestAccuracy) {
+      if (isForceRefine || acc < bestAccuracy) {
         bestAccuracy = acc;
         state.userCoords = {
           lat: lat,
@@ -959,11 +957,9 @@ document.addEventListener('DOMContentLoaded', () => {
           source: 'gps'
         };
         state.isGpsActive = true;
-        if (isForceRefine) {
-          state.calibratedStop = null;
-          state.isManualLocation = false;
-          try { localStorage.removeItem('wmb_calibrated_stop_id'); } catch(e) {}
-        }
+        state.calibratedStop = null;
+        state.isManualLocation = false;
+        try { localStorage.removeItem('wmb_calibrated_stop_id'); } catch(e) {}
 
         updateAllGpsBadges();
 
@@ -989,7 +985,7 @@ document.addEventListener('DOMContentLoaded', () => {
       err => {
         if (bestAccuracy === Infinity && onError) onError(err);
       },
-      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
     );
 
     // Step 2: Continuous 7-second GNSS refinement
@@ -997,7 +993,7 @@ document.addEventListener('DOMContentLoaded', () => {
       activeGpsWatcher = navigator.geolocation.watchPosition(
         pos => handlePos(pos),
         err => console.warn('[GPS Watcher]', err),
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
       );
 
       activeGpsTimer = setTimeout(() => {
@@ -1010,13 +1006,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getUserEffectiveLocation() {
-    // 1. If user calibrated or manually selected a stop
-    if (state.calibratedStop) {
+    // 1. If user explicitly calibrated or manually selected a stop in this session
+    if (state.isManualLocation && state.calibratedStop) {
       return {
         lat: state.calibratedStop.latitude,
         lng: state.calibratedStop.longitude,
         accuracy: 5,
         isManual: true,
+        isFallback: false,
         source: 'calibrated',
         stop: state.calibratedStop,
         label: getStopDisplayName(state.calibratedStop)
@@ -1045,6 +1042,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lng: uLng,
         accuracy: uAcc,
         isManual: false,
+        isFallback: false,
         source: 'gps',
         closestStop: closestStop || SMART_ST_DATA.busStops[0],
         distToClosestStop: minD,
@@ -1059,6 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
       lng: defaultStop.longitude,
       accuracy: 25,
       isManual: true,
+      isFallback: true,
       source: 'fallback',
       stop: defaultStop,
       label: getStopDisplayName(defaultStop)
@@ -1555,6 +1554,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const card = document.getElementById('home-nearby-card');
     if (!card) return;
 
+    const eff = getUserEffectiveLocation();
+
     // Get closest stop from user's GPS position
     const sortedStops = getSortedNearbyStops(1);
     if (sortedStops.length === 0) return;
@@ -1562,7 +1563,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const closest = sortedStops[0];
     const st = closest.stop;
     const distKm = closest.distKm;
-    const distStr = distKm < 1 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`;
+    let distStr = distKm < 1 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`;
+    if (eff.isFallback) {
+      distStr = 'Tap Locate for distance';
+    }
     const upcomingBus = closest.upcomingBus;
 
     const nameEl = document.getElementById('home-nearby-stop-name');
@@ -6001,6 +6005,56 @@ document.addEventListener('DOMContentLoaded', () => {
     updateOnlineStatus();
   }
 
+  function startContinuousLocationSync() {
+    if (!navigator.geolocation) return;
+
+    function applyLiveGpsFix(pos) {
+      if (!pos || !pos.coords) return;
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const acc = pos.coords.accuracy || 30;
+
+      state.userCoords = {
+        lat: lat,
+        lng: lng,
+        accuracy: acc,
+        quality: acc <= 30 ? 'high' : (acc <= 100 ? 'medium' : 'low'),
+        timestamp: Date.now(),
+        source: 'gps'
+      };
+      state.isGpsActive = true;
+      if (!state.isManualLocation) {
+        state.calibratedStop = null;
+      }
+
+      updateAllGpsBadges();
+      renderHomeNearbyStopCard();
+      renderPortalNearbyStopsList();
+      if (state.currentScreen === 'nearby-stops-view') {
+        renderNearbyStopsScreen();
+      }
+      if (state.mapInstance && state.currentScreen === 'tracking-view') {
+        updateMapCommuterLocation(lat, lng, acc);
+      }
+    }
+
+    // Step 1: Fast initial fix (Cell / Wi-Fi / IP cache)
+    navigator.geolocation.getCurrentPosition(
+      applyLiveGpsFix,
+      err => console.log('[WMB] Fast GPS lookup:', err.message),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+
+    // Step 2: High-accuracy continuous watcher (GNSS satellites)
+    try {
+      navigator.geolocation.watchPosition(
+        applyLiveGpsFix,
+        err => console.warn('[WMB] High-accuracy GPS watch:', err.message),
+        { enableHighAccuracy: true, timeout: 25000, maximumAge: 5000 }
+      );
+    } catch(e) {}
+  }
+
   // --------------------------------------------------------------------------
   // Application Bootstrap
   // --------------------------------------------------------------------------
@@ -6009,6 +6063,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAppLanguage(state.currentLanguage, { silent: true });
 
   setupEventListeners();
+  startContinuousLocationSync();
 
   // Expose global methods for inline HTML handlers if needed
   window.WMB = {
