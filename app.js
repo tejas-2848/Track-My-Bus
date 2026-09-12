@@ -19,9 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
     modalTriggerElement: null,
     activeStop: null,
     hasUserSelectedStop: false,
+    userSelectedStopId: (() => {
+      try { return localStorage.getItem('wmb_user_selected_stop') || null; } catch(e) { return null; }
+    })(),
     selectedBus: null,
     userCoords: null,
     isGpsActive: false,
+    isAccurateGps: false,
+    isCoarseNetwork: false,
+    coarseNetworkCoords: null,
     gpsRequestVersion: 0,
     userLocationUpdatedAt: 0,
     gpsLocationError: null,
@@ -928,8 +934,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetStop = resolveStopObject(stop.id || stop.name) || stop;
     state.activeStop = targetStop;
     state.hasUserSelectedStop = true;
+    state.userSelectedStopId = targetStop.id;
     state.lastViewedStopId = targetStop.id;
-    try { localStorage.setItem('wmb_last_viewed_stop', targetStop.id); } catch(e) {}
+    try {
+      localStorage.setItem('wmb_last_viewed_stop', targetStop.id);
+      localStorage.setItem('wmb_user_selected_stop', targetStop.id);
+    } catch(e) {}
 
     // Automatically select the next UPCOMING bus for this stop
     const upcomingResult = findBestUpcomingBusForStop(targetStop);
@@ -947,6 +957,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     navigateTo('tracking-view', { busId: state.selectedBus.id });
   }
+
+  const HIGH_ACCURACY_THRESHOLD_METERS = 1500;
 
   function requestUserGpsLocation(onSuccess, onError) {
     if (!navigator.geolocation) {
@@ -980,29 +992,47 @@ document.addEventListener('DOMContentLoaded', () => {
       const accuracy = Number(pos.coords.accuracy);
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
 
-      // Populate the card as soon as a position is available. A later
-      // watchPosition fix can replace the initial network estimate even when
-      // browsers report a less optimistic accuracy number for the real GPS fix.
+      // Discard invalid / dummy coordinates (e.g. 0,0)
+      if (Math.abs(latitude) < 0.001 && Math.abs(longitude) < 0.001) return;
+
       const normalizedAccuracy = Number.isFinite(accuracy) ? accuracy : Infinity;
+      const isAccurate = normalizedAccuracy <= HIGH_ACCURACY_THRESHOLD_METERS;
+
+      if (isAccurate) {
+        state.userCoords = {
+          lat: latitude,
+          lng: longitude,
+          accuracy: normalizedAccuracy
+        };
+        state.isGpsActive = true;
+        state.isAccurateGps = true;
+        state.isCoarseNetwork = false;
+        state.gpsLocationError = null;
+      } else {
+        // Coarse network IP estimate (e.g. 100km uncertainty from desktop ISP)
+        state.isAccurateGps = false;
+        state.isCoarseNetwork = true;
+        state.coarseNetworkCoords = {
+          lat: latitude,
+          lng: longitude,
+          accuracy: normalizedAccuracy
+        };
+        state.isGpsActive = false;
+        state.gpsLocationError = new Error('Coarse network IP location only (accuracy > 1.5km)');
+      }
+
       if (hasPosition && !isWatchUpdate) return;
 
       hasPosition = true;
-
-      state.userCoords = {
-        lat: latitude,
-        lng: longitude,
-        accuracy: normalizedAccuracy
-      };
-      state.isGpsActive = true;
       state.userLocationUpdatedAt = Date.now();
-      state.gpsLocationError = null;
-      if (onSuccess) onSuccess(pos, state.userCoords);
+      if (onSuccess) onSuccess(pos, state.userCoords || state.coarseNetworkCoords);
     };
 
     const handleError = (err) => {
       if (requestVersion !== state.gpsRequestVersion || hasPosition || hasReportedError) return;
       hasReportedError = true;
       state.isGpsActive = false;
+      state.isAccurateGps = false;
       state.gpsLocationError = err;
       if (onError) onError(err);
     };
@@ -1030,21 +1060,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getSortedNearbyStops(limit = 6) {
-    let userLat = state.userCoords ? Number(state.userCoords.lat) : null;
-    let userLng = state.userCoords ? Number(state.userCoords.lng) : null;
+    let userLat = (state.isAccurateGps && state.userCoords) ? Number(state.userCoords.lat) : null;
+    let userLng = (state.isAccurateGps && state.userCoords) ? Number(state.userCoords.lng) : null;
 
     if (!Number.isFinite(userLat) || !Number.isFinite(userLng)) {
-      if (state.activeStop && state.activeStop.latitude && state.activeStop.longitude) {
-        userLat = Number(state.activeStop.latitude);
-        userLng = Number(state.activeStop.longitude);
+      const activeOrSelected = (state.userSelectedStopId && resolveStopObject(state.userSelectedStopId)) || state.activeStop;
+      if (activeOrSelected && Number.isFinite(Number(activeOrSelected.latitude)) && Number.isFinite(Number(activeOrSelected.longitude))) {
+        userLat = Number(activeOrSelected.latitude);
+        userLng = Number(activeOrSelected.longitude);
       } else {
-        userLat = 19.9975; // Nashik CBS
+        userLat = 19.9975; // Nashik CBS fallback for ranking
         userLng = 73.7898;
       }
     }
 
-    // Every mapped village, phata, and small stop is eligible for nearby-stop
-    // results. Keep physical stops and route waypoints in one de-duplicated set.
     const candidatesMap = new Map();
     SMART_ST_DATA.busStops.forEach(s => candidatesMap.set(s.name, s));
 
@@ -1157,6 +1186,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (customLat && customLng) {
       state.userCoords = { lat: customLat, lng: customLng, accuracy: 15 };
       state.isGpsActive = true;
+      state.isAccurateGps = true;
+      state.isCoarseNetwork = false;
     }
 
     const nearby = getSortedNearbyStops(6);
@@ -1217,11 +1248,19 @@ document.addEventListener('DOMContentLoaded', () => {
           pos => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
-            if (statusEl) statusEl.textContent = `● GPS Located (±${Math.round(pos.coords.accuracy)}m)`;
-            renderNearbyBusStops(lat, lng);
-            renderHomeNearbyStopCard();
-            renderPortalNearbyStopsList();
-            showToast('Updated nearby stops based on your location!');
+            if (state.isAccurateGps) {
+              if (statusEl) statusEl.textContent = `● GPS Located (±${Math.round(pos.coords.accuracy)}m)`;
+              renderNearbyBusStops(lat, lng);
+              renderHomeNearbyStopCard();
+              renderPortalNearbyStopsList();
+              showToast('Updated nearby stops based on your location!');
+            } else {
+              if (statusEl) statusEl.textContent = '● Regional Transit Network';
+              renderNearbyBusStops();
+              renderHomeNearbyStopCard();
+              renderPortalNearbyStopsList();
+              showToast('Device GPS unavailable (network IP). Showing regional stops.');
+            }
           },
           err => {
             console.warn('[WMB] Geolocation error:', err);
@@ -1284,39 +1323,73 @@ document.addEventListener('DOMContentLoaded', () => {
     const etaEl = document.getElementById('home-nearby-eta');
     const busBox = document.getElementById('home-nearby-bus-box');
 
-    // Get closest stop from user's GPS position
-    const hasUserLocation = state.userCoords &&
+    // 1. Check if user explicitly selected a stop
+    const selectedStop = state.userSelectedStopId ? resolveStopObject(state.userSelectedStopId) : null;
+
+    // 2. Check if we have a real high-accuracy GPS fix (accuracy <= 1500m)
+    const hasAccurateGps = state.isAccurateGps && state.userCoords &&
       Number.isFinite(Number(state.userCoords.lat)) &&
       Number.isFinite(Number(state.userCoords.lng));
 
-    if (!hasUserLocation) {
-      const locationUnavailable = Boolean(state.gpsLocationError);
-      // Do not leave the server/default stop visible while GPS is resolving.
-      // The Home GPS request rerenders this card as soon as coordinates arrive.
+    // If neither high-accuracy GPS nor a user-selected stop is available,
+    // keep that location unavailable as it is now.
+    if (!hasAccurateGps && !selectedStop) {
+      const locationUnavailable = Boolean(state.gpsLocationError || state.isCoarseNetwork);
       if (nameEl) nameEl.textContent = locationUnavailable ? 'Location unavailable' : 'Finding nearest stop…';
       if (distEl) distEl.textContent = locationUnavailable ? 'Open Nearby Bus Stops to retry' : 'Using your location';
       if (busTypeEl) busTypeEl.textContent = locationUnavailable ? 'Could not get your device location' : 'Live arrivals will appear here';
       if (busDestEl) busDestEl.textContent = '';
       if (etaEl) etaEl.textContent = '…';
+
+      card.onclick = (e) => {
+        if (e.target.closest('#btn-home-nearby-view-all')) return;
+        navigateTo('nearby-stops-view');
+      };
+
+      const viewAllBtn = document.getElementById('btn-home-nearby-view-all');
+      if (viewAllBtn) {
+        viewAllBtn.onclick = (e) => {
+          e.stopPropagation();
+          navigateTo('nearby-stops-view');
+        };
+      }
       return;
     }
 
-    const sortedStops = getSortedNearbyStops(1);
-    if (sortedStops.length === 0) return;
+    let st = null;
+    let distStr = '';
+    let upcomingBus = null;
+    let etaMins = null;
 
-    const closest = sortedStops[0];
-    const st = closest.stop;
-    const distKm = closest.distKm;
-    const distStr = distKm < 1 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`;
-    const upcomingBus = closest.upcomingBus;
+    if (hasAccurateGps) {
+      const sortedStops = getSortedNearbyStops(1);
+      if (sortedStops.length > 0) {
+        const closest = sortedStops[0];
+        st = closest.stop;
+        const distKm = closest.distKm;
+        distStr = distKm < 1 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`;
+        upcomingBus = closest.upcomingBus;
+        etaMins = closest.etaMinutes;
+      }
+    } else if (selectedStop) {
+      st = selectedStop;
+      distStr = 'Selected Stop';
+      const upcomingResult = findBestUpcomingBusForStop(st);
+      if (upcomingResult) {
+        upcomingBus = upcomingResult.bus;
+        etaMins = upcomingResult.etaMinutes;
+      }
+    }
+
+    if (!st) return;
 
     if (nameEl) nameEl.textContent = getStopDisplayName(st);
     if (distEl) distEl.textContent = distStr;
 
     if (upcomingBus) {
-      if (busTypeEl) busTypeEl.textContent = upcomingBus.type.split('(')[0].trim();
+      if (busTypeEl) busTypeEl.textContent = upcomingBus.type ? upcomingBus.type.split('(')[0].trim() : 'MSRTC Bus';
       if (busDestEl) busDestEl.textContent = `Towards ${getBusDestination(upcomingBus)}`;
-      if (etaEl) etaEl.textContent = `${closest.etaMinutes} min`;
+      if (etaEl) etaEl.textContent = `${etaMins != null ? etaMins : '…'} min`;
     } else {
       if (busTypeEl) busTypeEl.textContent = 'MSRTC Bus';
       if (busDestEl) busDestEl.textContent = 'Towards Next Station';
@@ -1351,9 +1424,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const statusEl = document.getElementById('portal-nearby-gps-status');
     if (statusEl) {
-      if (state.isGpsActive && state.userCoords) {
+      if (state.isAccurateGps && state.userCoords) {
         statusEl.textContent = `● Live GPS (±${Math.round(state.userCoords.accuracy || 10)}m)`;
         statusEl.style.color = 'var(--status-green)';
+      } else if (state.isCoarseNetwork) {
+        statusEl.textContent = '● Regional Network (IP)';
+        statusEl.style.color = 'var(--text-secondary)';
       } else {
         statusEl.textContent = '● Regional Transit Network';
         statusEl.style.color = 'var(--text-secondary)';
@@ -1491,11 +1567,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update GPS status banner
     const gpsStatusEl = document.getElementById('nearby-page-gps-status');
     if (gpsStatusEl) {
-      if (state.isGpsActive && state.userCoords) {
+      if (state.isAccurateGps && state.userCoords) {
         gpsStatusEl.textContent = `● Live GPS (±${Math.round(state.userCoords.accuracy || 10)}m)`;
         gpsStatusEl.classList.add('gps-active');
+      } else if (state.isCoarseNetwork) {
+        gpsStatusEl.textContent = '● Regional Network (IP)';
+        gpsStatusEl.classList.remove('gps-active');
       } else {
-        gpsStatusEl.textContent = `● Regional Network`;
+        gpsStatusEl.textContent = '● Regional Network';
         gpsStatusEl.classList.remove('gps-active');
       }
     }
@@ -5244,6 +5323,10 @@ document.addEventListener('DOMContentLoaded', () => {
               meta: `${stop.taluka || 'Nashik'} • Stop`
             });
             closeSearch();
+            state.userSelectedStopId = stop.id;
+            state.hasUserSelectedStop = true;
+            try { localStorage.setItem('wmb_user_selected_stop', stop.id); } catch(e) {}
+            renderHomeNearbyStopCard();
             openLiveMapForStop(stop);
           });
           quickSearchDropdown.appendChild(el);
@@ -5347,6 +5430,10 @@ document.addEventListener('DOMContentLoaded', () => {
             closeSearch();
             quickSearchInput.value = '';
             updateClearBtnVisibility();
+            state.userSelectedStopId = stop.id;
+            state.hasUserSelectedStop = true;
+            try { localStorage.setItem('wmb_user_selected_stop', stop.id); } catch(e) {}
+            renderHomeNearbyStopCard();
             openLiveMapForStop(stop);
           });
           quickSearchDropdown.appendChild(item);
@@ -5526,8 +5613,13 @@ document.addEventListener('DOMContentLoaded', () => {
           pos => {
             renderPortalNearbyStopsList();
             renderHomeNearbyStopCard();
-            renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
-            showToast('Updated nearby stops based on your location!');
+            if (state.isAccurateGps) {
+              renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
+              showToast('Updated nearby stops based on your location!');
+            } else {
+              renderNearbyBusStops();
+              showToast('Device GPS unavailable (network IP). Select your stop below.');
+            }
           },
           err => {
             showToast('Could not acquire GPS position. Showing regional stops.');
