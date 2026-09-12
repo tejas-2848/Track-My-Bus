@@ -1088,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${upBusBadge}
         </div>
         <button class="btn btn-sm btn-primary btn-select-nearby-stop" type="button" style="padding: 6px 12px; font-size: 12px; font-weight: 700;">
-          Live Map ➔
+          Live Map <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
       `;
 
@@ -1269,7 +1269,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${nextBusHtml}
         </div>
         <button class="btn btn-sm btn-primary btn-select-nearby-stop" type="button" style="padding: 6px 12px; font-size: 12px; font-weight: 700; white-space: nowrap;">
-          Live Map ➔
+          Live Map <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
       `;
 
@@ -1498,7 +1498,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>${upBus.type || 'Ordinary'} • ${upBus.number || upBus.id}</span>
               </div>
               <div class="nearby-preview-dest">
-                <span class="nearby-preview-arrow">➔</span> Towards <strong>${busDest}</strong>
+                <span class="nearby-preview-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span> Towards <strong>${busDest}</strong>
               </div>
             </div>
             <div class="nearby-preview-right">
@@ -1625,10 +1625,10 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="flex-align gap-2">
           <button class="btn btn-sm btn-primary btn-fav-go" title="View Live Arrivals">
-            Arrivals ➔
+            Arrivals <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </button>
           <button class="icon-btn btn-fav-del" title="Remove" style="font-size: 14px; padding: 4px 6px;">
-            ✕
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
       `;
@@ -1688,7 +1688,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="home-fav-right">
           <span class="home-fav-eta">${etaText}</span>
-          <button class="btn-remove-fav" title="Remove Favorite" data-stop-id="${stop.id}">✕</button>
+          <button class="btn-remove-fav" title="Remove Favorite" data-stop-id="${stop.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
         </div>
       `;
 
@@ -2099,7 +2099,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="route-badge-and-title">
             <span class="route-code-pill">${route.id}</span>
             <div class="route-title-group">
-              <div class="route-title-text">${originText} ➔ ${destText}</div>
+              <div class="route-title-text">${originText} <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg> ${destText}</div>
               <div class="route-title-mr">${route.nameMr || ''}</div>
             </div>
           </div>
@@ -2631,7 +2631,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isSelected) {
         badgeLabel = isPassed ? 'Passed ● Live' : 'Upcoming ● Live';
       } else if (isPassed) {
-        badgeLabel = '✓ Passed';
+        badgeLabel = 'Passed';
       } else {
         badgeLabel = 'Upcoming';
       }
