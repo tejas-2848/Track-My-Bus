@@ -1029,10 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const uLng = state.userCoords.lng;
       const uAcc = state.userCoords.accuracy || 20;
 
-      // Check if coordinates fall within Maharashtra transit boundaries (Lat 15.5-22.5, Lng 72.0-81.0)
-      const inMaharashtra = (uLat >= 15.5 && uLat <= 22.5 && uLng >= 72.0 && uLng <= 81.0);
-
-      // Check distance to closest known stop in our 142 stops network
+      // Find closest known stop in our transit network
       let minD = Infinity, closestStop = null;
       for (const s of SMART_ST_DATA.busStops) {
         const d = calculateDistanceKm(uLat, uLng, s.latitude, s.longitude);
@@ -1042,23 +1039,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // If valid coordinates within regional boundary and within 50 km of transit network
-      if (inMaharashtra && minD <= 50) {
-        state.isGpsOutOfRegion = false;
-        return {
-          lat: uLat,
-          lng: uLng,
-          accuracy: uAcc,
-          isManual: false,
-          source: 'gps',
-          closestStop: closestStop,
-          distToClosestStop: minD,
-          quality: uAcc <= 30 ? 'high' : (uAcc <= 120 ? 'medium' : 'low')
-        };
-      } else {
-        // GPS coordinate from ISP / VPN is out of Maharashtra
-        state.isGpsOutOfRegion = true;
-      }
+      state.isGpsOutOfRegion = (minD > 100);
+      return {
+        lat: uLat,
+        lng: uLng,
+        accuracy: uAcc,
+        isManual: false,
+        source: 'gps',
+        closestStop: closestStop || SMART_ST_DATA.busStops[0],
+        distToClosestStop: minD,
+        quality: uAcc <= 30 ? 'high' : (uAcc <= 120 ? 'medium' : 'low')
+      };
     }
 
     // 3. Fallback to active stop or default regional hub
@@ -1174,6 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const triggerIds = [
       'btn-home-calibrate-gps',
+      'btn-home-nearby-calibrate',
       'btn-nearby-calibrate-gps',
       'nearby-gps-status',
       'nearby-page-gps-status',
@@ -1529,6 +1521,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Dynamic Live Nearby Bus Stop Card
     renderHomeNearbyStopCard();
+
+    // 5. Auto-check live GPS on initial home screen if supported and not yet acquired
+    if (!state.hasCheckedInitialGps && !state.userCoords && !state.calibratedStop && navigator.geolocation) {
+      state.hasCheckedInitialGps = true;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = pos.coords.accuracy || 25;
+          state.userCoords = {
+            lat: lat,
+            lng: lng,
+            accuracy: acc,
+            quality: acc <= 30 ? 'high' : (acc <= 100 ? 'medium' : 'low'),
+            timestamp: Date.now(),
+            source: 'gps'
+          };
+          state.isGpsActive = true;
+          updateAllGpsBadges();
+          renderHomeNearbyStopCard();
+          renderPortalNearbyStopsList();
+        },
+        (err) => {
+          console.log('[WMB] Initial GPS check not available or denied');
+        },
+        { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 }
+      );
+    }
   }
 
   function renderHomeNearbyStopCard() {
@@ -1553,7 +1573,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const busBox = document.getElementById('home-nearby-bus-box');
 
     if (nameEl) nameEl.textContent = getStopDisplayName(st);
-    if (distEl) distEl.textContent = state.isGpsActive ? `${distStr} • Live GPS` : distStr;
+    if (distEl) distEl.textContent = distStr;
 
     if (upcomingBus) {
       if (busTypeEl) busTypeEl.textContent = upcomingBus.type.split('(')[0].trim();
@@ -1567,7 +1587,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Clicking card or bus box opens live map for this stop
     card.onclick = (e) => {
-      if (e.target.closest('#btn-home-nearby-view-all')) return;
+      if (e.target.closest('#btn-home-nearby-view-all') || e.target.closest('#btn-home-nearby-locate') || e.target.closest('#btn-home-nearby-calibrate')) return;
       openLiveMapForStop(st);
     };
 
@@ -5273,6 +5293,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (favSearchInput) {
       favSearchInput.addEventListener('input', (e) => {
         populateFavoritePicker(e.target.value);
+      });
+    }
+
+    // Home Nearby Bus Stop Card Locate Action
+    const btnHomeNearbyLocate = document.getElementById('btn-home-nearby-locate');
+    if (btnHomeNearbyLocate) {
+      btnHomeNearbyLocate.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showToast('Acquiring live GPS coordinates...');
+        btnHomeNearbyLocate.style.opacity = '0.5';
+        requestUserGpsLocation(
+          (pos, fix) => {
+            btnHomeNearbyLocate.style.opacity = '1';
+            renderHomeNearbyStopCard();
+            renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
+            renderPortalNearbyStopsList();
+            showToast('Nearby stop updated with your live location!');
+          },
+          (err) => {
+            btnHomeNearbyLocate.style.opacity = '1';
+            showToast('Could not acquire GPS position. Please check location permissions.');
+          },
+          true // clear manual station calibration
+        );
       });
     }
 
