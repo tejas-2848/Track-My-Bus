@@ -22,6 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedBus: null,
     userCoords: null,
     isGpsActive: false,
+    isGpsOutOfRegion: false,
+    isManualLocation: false,
+    calibratedStop: (() => {
+      try {
+        const savedId = localStorage.getItem('wmb_calibrated_stop_id');
+        if (savedId && typeof SMART_ST_DATA !== 'undefined' && SMART_ST_DATA.busStops) {
+          return SMART_ST_DATA.busStops.find(s => s.id === savedId) || null;
+        }
+      } catch(e) {}
+      return null;
+    })(),
     currentUser: (() => {
       try { return JSON.parse(localStorage.getItem('wmb_currentUser')) || null; } catch(e) { return null; }
     })(),
@@ -38,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     busMarker: null,
     stopMarker: null,
     userLocationMarker: null,
+    userAccuracyCircle: null,
     routePolylineCasing: null,
     routePolylineCore: null,
     intermediateMarkers: [],
@@ -907,42 +919,165 @@ document.addEventListener('DOMContentLoaded', () => {
     navigateTo('tracking-view', { busId: state.selectedBus.id });
   }
 
-  function requestUserGpsLocation(onSuccess, onError) {
+  let activeGpsWatcher = null;
+  let activeGpsTimer = null;
+
+  function requestUserGpsLocation(onSuccess, onError, isForceRefine = false) {
     if (!navigator.geolocation) {
       if (onError) onError(new Error('Geolocation not supported'));
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      pos => {
+
+    if (activeGpsWatcher !== null) {
+      try { navigator.geolocation.clearWatch(activeGpsWatcher); } catch(e) {}
+      activeGpsWatcher = null;
+    }
+    if (activeGpsTimer !== null) {
+      clearTimeout(activeGpsTimer);
+      activeGpsTimer = null;
+    }
+
+    let bestAccuracy = Infinity;
+
+    function handlePos(pos) {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const acc = pos.coords.accuracy || 500;
+
+      let quality = 'low';
+      if (acc <= 30) quality = 'high';
+      else if (acc <= 100) quality = 'medium';
+
+      if (acc < bestAccuracy) {
+        bestAccuracy = acc;
         state.userCoords = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy
+          lat: lat,
+          lng: lng,
+          accuracy: acc,
+          quality: quality,
+          timestamp: Date.now(),
+          source: 'gps'
         };
         state.isGpsActive = true;
-        if (onSuccess) onSuccess(pos);
-      },
+        if (isForceRefine) {
+          state.calibratedStop = null;
+          state.isManualLocation = false;
+          try { localStorage.removeItem('wmb_calibrated_stop_id'); } catch(e) {}
+        }
+
+        updateAllGpsBadges();
+
+        if (onSuccess) onSuccess(pos, state.userCoords);
+
+        // Satellite GNSS precision achieved (<= 25m), can finish early
+        if (acc <= 25) {
+          if (activeGpsWatcher !== null) {
+            try { navigator.geolocation.clearWatch(activeGpsWatcher); } catch(e) {}
+            activeGpsWatcher = null;
+          }
+          if (activeGpsTimer !== null) {
+            clearTimeout(activeGpsTimer);
+            activeGpsTimer = null;
+          }
+        }
+      }
+    }
+
+    // Step 1: Quick current position
+    navigator.geolocation.getCurrentPosition(
+      pos => handlePos(pos),
       err => {
-        state.isGpsActive = false;
-        if (onError) onError(err);
+        if (bestAccuracy === Infinity && onError) onError(err);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
     );
+
+    // Step 2: Continuous 7-second GNSS refinement
+    try {
+      activeGpsWatcher = navigator.geolocation.watchPosition(
+        pos => handlePos(pos),
+        err => console.warn('[GPS Watcher]', err),
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      );
+
+      activeGpsTimer = setTimeout(() => {
+        if (activeGpsWatcher !== null) {
+          try { navigator.geolocation.clearWatch(activeGpsWatcher); } catch(e) {}
+          activeGpsWatcher = null;
+        }
+      }, 7000);
+    } catch(e) {}
+  }
+
+  function getUserEffectiveLocation() {
+    // 1. If user calibrated or manually selected a stop
+    if (state.calibratedStop) {
+      return {
+        lat: state.calibratedStop.latitude,
+        lng: state.calibratedStop.longitude,
+        accuracy: 5,
+        isManual: true,
+        source: 'calibrated',
+        stop: state.calibratedStop,
+        label: getStopDisplayName(state.calibratedStop)
+      };
+    }
+
+    // 2. If live GPS is available
+    if (state.userCoords && state.userCoords.lat && state.userCoords.lng) {
+      const uLat = state.userCoords.lat;
+      const uLng = state.userCoords.lng;
+      const uAcc = state.userCoords.accuracy || 20;
+
+      // Check if coordinates fall within Maharashtra transit boundaries (Lat 15.5-22.5, Lng 72.0-81.0)
+      const inMaharashtra = (uLat >= 15.5 && uLat <= 22.5 && uLng >= 72.0 && uLng <= 81.0);
+
+      // Check distance to closest known stop in our 142 stops network
+      let minD = Infinity, closestStop = null;
+      for (const s of SMART_ST_DATA.busStops) {
+        const d = calculateDistanceKm(uLat, uLng, s.latitude, s.longitude);
+        if (d < minD) {
+          minD = d;
+          closestStop = s;
+        }
+      }
+
+      // If valid coordinates within regional boundary and within 50 km of transit network
+      if (inMaharashtra && minD <= 50) {
+        state.isGpsOutOfRegion = false;
+        return {
+          lat: uLat,
+          lng: uLng,
+          accuracy: uAcc,
+          isManual: false,
+          source: 'gps',
+          closestStop: closestStop,
+          distToClosestStop: minD,
+          quality: uAcc <= 30 ? 'high' : (uAcc <= 120 ? 'medium' : 'low')
+        };
+      } else {
+        // GPS coordinate from ISP / VPN is out of Maharashtra
+        state.isGpsOutOfRegion = true;
+      }
+    }
+
+    // 3. Fallback to active stop or default regional hub
+    const defaultStop = state.activeStop || SMART_ST_DATA.busStops[0];
+    return {
+      lat: defaultStop.latitude,
+      lng: defaultStop.longitude,
+      accuracy: 25,
+      isManual: true,
+      source: 'fallback',
+      stop: defaultStop,
+      label: getStopDisplayName(defaultStop)
+    };
   }
 
   function getSortedNearbyStops(limit = 6) {
-    let userLat = state.userCoords ? state.userCoords.lat : null;
-    let userLng = state.userCoords ? state.userCoords.lng : null;
-
-    if (!userLat || !userLng) {
-      if (state.activeStop && state.activeStop.latitude && state.activeStop.longitude) {
-        userLat = state.activeStop.latitude;
-        userLng = state.activeStop.longitude;
-      } else {
-        userLat = 19.9975; // Nashik CBS
-        userLng = 73.7898;
-      }
-    }
+    const eff = getUserEffectiveLocation();
+    const userLat = eff.lat;
+    const userLng = eff.lng;
 
     const candidatesMap = new Map();
     SMART_ST_DATA.busStops.forEach(s => candidatesMap.set(s.name, s));
@@ -980,6 +1115,243 @@ document.addEventListener('DOMContentLoaded', () => {
 
     stopList.sort((a, b) => a.distKm - b.distKm);
     return stopList.slice(0, limit);
+  }
+
+  function updateAllGpsBadges() {
+    const eff = getUserEffectiveLocation();
+    const badges = [
+      document.getElementById('nearby-gps-status'),
+      document.getElementById('nearby-page-gps-status'),
+      document.getElementById('portal-nearby-gps-status')
+    ];
+
+    badges.forEach(badge => {
+      if (!badge) return;
+      badge.className = 'gps-accuracy-pill';
+
+      if (eff.isManual) {
+        badge.classList.add('manual');
+        badge.textContent = `● Calibrated: ${eff.label || 'Station'}`;
+        badge.title = 'Station Calibrated Manually • Tap to Change';
+      } else if (eff.source === 'gps') {
+        const acc = Math.round(eff.accuracy);
+        badge.classList.add(eff.quality);
+        if (eff.quality === 'high') {
+          badge.textContent = `● High GPS (±${acc}m)`;
+        } else if (eff.quality === 'medium') {
+          badge.textContent = `● GPS (±${acc}m)`;
+        } else {
+          badge.textContent = `● Approx (±${acc}m) • Calibrate`;
+        }
+        badge.title = `Accuracy: ±${acc}m • Tap to Calibrate`;
+      } else {
+        badge.classList.add('medium');
+        badge.textContent = '● Regional Hub • Calibrate';
+        badge.title = 'Tap to Calibrate Station';
+      }
+    });
+
+    // Low GPS warning on map
+    const mapWarning = document.getElementById('map-low-gps-warning');
+    const mapWarningText = document.getElementById('map-low-gps-text');
+    if (mapWarning) {
+      if (!eff.isManual && eff.source === 'gps' && eff.accuracy > 100) {
+        mapWarning.style.display = 'flex';
+        if (mapWarningText) {
+          mapWarningText.textContent = `Approximate GPS (±${Math.round(eff.accuracy)}m)`;
+        }
+      } else {
+        mapWarning.style.display = 'none';
+      }
+    }
+
+    updateCalibrateModalStatusBox();
+  }
+
+  function setupCalibrateLocationModal() {
+    const modal = document.getElementById('calibrate-location-modal');
+    if (!modal) return;
+
+    const triggerIds = [
+      'btn-home-calibrate-gps',
+      'btn-nearby-calibrate-gps',
+      'nearby-gps-status',
+      'nearby-page-gps-status',
+      'portal-nearby-gps-status',
+      'btn-map-calibrate-gps'
+    ];
+    triggerIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openCalibrateLocationModal();
+        });
+      }
+    });
+
+    const rescanBtn = document.getElementById('btn-calibrate-rescan-gps');
+    const rescanText = document.getElementById('calibrate-rescan-text');
+    if (rescanBtn) {
+      rescanBtn.addEventListener('click', () => {
+        if (rescanText) rescanText.textContent = 'Locking GNSS Satellites (Wait 5-8s)...';
+        rescanBtn.disabled = true;
+        showToast('Connecting to GPS satellites with multi-sample filtering...');
+
+        requestUserGpsLocation(
+          (pos, fix) => {
+            rescanBtn.disabled = false;
+            if (rescanText) rescanText.textContent = 'Start 8-Second Satellite GPS Lock';
+            showToast(`High-accuracy GPS lock achieved (±${Math.round(fix.accuracy)}m)!`);
+            updateAllGpsBadges();
+            renderNearbyBusStops();
+            renderHomeNearbyStopCard();
+            renderPortalNearbyStopsList();
+            updateCalibrateModalStatusBox();
+          },
+          (err) => {
+            rescanBtn.disabled = false;
+            if (rescanText) rescanText.textContent = 'Start 8-Second Satellite GPS Lock';
+            showToast('Could not acquire satellites. Please select your station below.');
+          },
+          true
+        );
+      });
+    }
+
+    const chips = modal.querySelectorAll('.btn-calibrate-chip');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const stopId = chip.dataset.stopId;
+        const targetStop = SMART_ST_DATA.busStops.find(s => s.id === stopId);
+        if (targetStop) {
+          applyCalibratedStop(targetStop);
+          closeModal('calibrate-location-modal');
+        }
+      });
+    });
+
+    const searchInput = document.getElementById('calibrate-stop-search-input');
+    const resultsContainer = document.getElementById('calibrate-search-results');
+    if (searchInput && resultsContainer) {
+      searchInput.addEventListener('input', () => {
+        const q = searchInput.value.trim().toLowerCase();
+        if (!q) {
+          resultsContainer.innerHTML = '';
+          return;
+        }
+
+        const matches = SMART_ST_DATA.busStops.filter(s => 
+          s.name.toLowerCase().includes(q) ||
+          (s.nameMr && s.nameMr.includes(q)) ||
+          (s.taluka && s.taluka.toLowerCase().includes(q)) ||
+          (s.district && s.district.toLowerCase().includes(q))
+        ).slice(0, 10);
+
+        if (matches.length === 0) {
+          resultsContainer.innerHTML = '<div class="p-2 text-xs text-secondary text-center">No matching stops or phatas found</div>';
+          return;
+        }
+
+        resultsContainer.innerHTML = matches.map(s => `
+          <div class="calibrate-search-item" data-stop-id="${s.id}">
+            <div>
+              <div style="font-weight:600;">${getStopDisplayName(s)}</div>
+              <div class="text-xs text-secondary">${s.taluka || 'Taluka'}, ${s.district || 'District'}</div>
+            </div>
+            <button class="btn btn-xs btn-primary" type="button">Select</button>
+          </div>
+        `).join('');
+
+        resultsContainer.querySelectorAll('.calibrate-search-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const sid = item.dataset.stopId;
+            const targetStop = SMART_ST_DATA.busStops.find(s => s.id === sid);
+            if (targetStop) {
+              applyCalibratedStop(targetStop);
+              closeModal('calibrate-location-modal');
+            }
+          });
+        });
+      });
+    }
+  }
+
+  function applyCalibratedStop(stop) {
+    state.calibratedStop = stop;
+    state.activeStop = stop;
+    state.hasUserSelectedStop = true;
+    state.isGpsActive = true;
+    state.isManualLocation = true;
+    try {
+      localStorage.setItem('wmb_calibrated_stop_id', stop.id);
+    } catch(e) {}
+
+    showToast(`Location calibrated to: ${getStopDisplayName(stop)}`);
+    updateAllGpsBadges();
+    renderNearbyBusStops();
+    renderHomeNearbyStopCard();
+    renderPortalNearbyStopsList();
+    if (state.currentScreen === 'nearby-stops-view') {
+      renderNearbyStopsScreen();
+    }
+
+    if (state.mapInstance) {
+      state.mapInstance.panTo({ lat: stop.latitude, lng: stop.longitude });
+      if (state.userAccuracyCircle) {
+        state.userAccuracyCircle.setCenter({ lat: stop.latitude, lng: stop.longitude });
+        state.userAccuracyCircle.setRadius(25);
+        state.userAccuracyCircle.setOptions({ fillColor: '#10B981', strokeColor: '#059669' });
+      }
+      if (state.userLocationMarker) {
+        state.userLocationMarker.position = { lat: stop.latitude, lng: stop.longitude };
+      }
+    }
+  }
+
+  function openCalibrateLocationModal() {
+    updateCalibrateModalStatusBox();
+    openModal('calibrate-location-modal');
+  }
+
+  function updateCalibrateModalStatusBox() {
+    const box = document.getElementById('calibrate-current-status-box');
+    const badge = document.getElementById('calibrate-status-badge');
+    const main = document.getElementById('calibrate-status-main');
+    const sub = document.getElementById('calibrate-status-sub');
+    if (!box || !badge || !main || !sub) return;
+
+    const eff = getUserEffectiveLocation();
+    if (eff.isManual) {
+      badge.className = 'badge badge-blue';
+      badge.textContent = 'Calibrated';
+      main.textContent = eff.label || 'Station Selected';
+      sub.textContent = 'Station calibrated manually. Distances and ETAs are 100% accurate.';
+    } else if (eff.source === 'gps') {
+      const acc = Math.round(eff.accuracy);
+      if (eff.quality === 'high') {
+        badge.className = 'badge badge-green';
+        badge.textContent = `±${acc}m Satellite`;
+        main.textContent = 'High-Accuracy Satellite GNSS';
+        sub.textContent = `Real-time satellite GPS lock within ±${acc} meters precision.`;
+      } else if (eff.quality === 'medium') {
+        badge.className = 'badge badge-blue';
+        badge.textContent = `±${acc}m Assisted`;
+        main.textContent = 'Assisted GPS / Network';
+        sub.textContent = `Position accuracy is within ±${acc} meters. Suitable for general tracking.`;
+      } else {
+        badge.className = 'badge badge-orange';
+        badge.textContent = `±${acc}m Coarse`;
+        main.textContent = 'Low-Accuracy Cell / IP Fix';
+        sub.textContent = `Drift detected (±${acc}m). We recommend selecting your station below.`;
+      }
+    } else {
+      badge.className = 'badge badge-secondary';
+      badge.textContent = 'Default Hub';
+      main.textContent = eff.label || 'Regional Transit Hub';
+      sub.textContent = 'Device GPS inactive. Showing standard central station.';
+    }
   }
 
   function simulateQRScan(stopId) {
@@ -3698,53 +4070,81 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // 3. Locate My Stop / Browser Geolocation
+    // 3. Locate My Stop / Browser Geolocation with GNSS Accuracy Circle
     const locateBtn = document.getElementById('btn-locate-user-stop');
     if (locateBtn) {
       locateBtn.addEventListener('click', () => {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-              const uLat = pos.coords.latitude;
-              const uLng = pos.coords.longitude;
-              if (state.mapInstance) {
-                if (state.userLocationMarker) {
-                  state.userLocationMarker.map = null;
-                }
-                const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
-                const userElement = document.createElement('div');
-                userElement.innerHTML = `
-                  <div style="position:relative; display:flex; align-items:center; justify-content:center;">
-                    <div class="live-bus-pulse-ring" style="background:rgba(59,130,246,0.5); width:36px; height:36px;"></div>
-                    <div style="width:16px; height:16px; border-radius:50%; background:#2563EB; border:3px solid white; box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>
+        showToast('Acquiring high-accuracy GPS position...');
+        requestUserGpsLocation(
+          async (pos, fix) => {
+            const uLat = fix.lat;
+            const uLng = fix.lng;
+            const uAcc = fix.accuracy || 20;
+
+            if (state.mapInstance) {
+              if (state.userLocationMarker) {
+                state.userLocationMarker.map = null;
+                state.userLocationMarker = null;
+              }
+              if (state.userAccuracyCircle) {
+                state.userAccuracyCircle.setMap(null);
+                state.userAccuracyCircle = null;
+              }
+
+              const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+              const userElement = document.createElement('div');
+              userElement.className = 'user-location-pulse-wrap';
+              userElement.innerHTML = `
+                <div class="user-location-pulse-ring"></div>
+                <div class="user-location-dot"></div>
+              `;
+
+              state.userLocationMarker = new AdvancedMarkerElement({
+                map: state.mapInstance,
+                position: { lat: uLat, lng: uLng },
+                content: userElement,
+                title: `Your Location (±${Math.round(uAcc)}m)`
+              });
+
+              // Add Google Maps Accuracy Circle
+              const isHigh = uAcc <= 35;
+              state.userAccuracyCircle = new google.maps.Circle({
+                map: state.mapInstance,
+                center: { lat: uLat, lng: uLng },
+                radius: Math.max(15, Math.min(2500, uAcc)),
+                fillColor: isHigh ? '#10B981' : (uAcc <= 100 ? '#3B82F6' : '#F59E0B'),
+                fillOpacity: 0.16,
+                strokeColor: isHigh ? '#059669' : (uAcc <= 100 ? '#2563EB' : '#D97706'),
+                strokeOpacity: 0.55,
+                strokeWeight: 1.5,
+                clickable: false
+              });
+
+              state.userLocationMarker.addListener('click', () => {
+                showMapInfoPopup(`
+                  <div style="font-size:13px; font-weight:700;">Your Location</div>
+                  <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">Accuracy: <strong>±${Math.round(uAcc)} meters</strong> (${fix.quality} precision)</div>
+                  <div style="margin-top:6px;">
+                    <button class="btn btn-xs btn-secondary" onclick="window.WMB.openCalibrateLocationModal()">Calibrate / Pick Station</button>
                   </div>
-                `;
-                state.userLocationMarker = new AdvancedMarkerElement({
-                  map: state.mapInstance,
-                  position: { lat: uLat, lng: uLng },
-                  content: userElement,
-                  title: 'Your Current Location'
-                });
-                state.userLocationMarker.addListener('click', () => {
-                  showMapInfoPopup('<b>Your Current Location</b>', state.userLocationMarker);
-                });
-                state.mapInstance.panTo({ lat: uLat, lng: uLng });
-                showToast('Located your live GPS position!');
+                `, state.userLocationMarker);
+              });
+
+              state.mapInstance.panTo({ lat: uLat, lng: uLng });
+              if (uAcc > 100) {
+                showToast(`GPS located (approximate ±${Math.round(uAcc)}m). Tap badge to calibrate.`);
+              } else {
+                showToast(`High-accuracy GPS lock (±${Math.round(uAcc)}m)!`);
               }
-            },
-            () => {
-              // Fallback to stop location
-              if (state.mapInstance && state.targetStopPt) {
-                state.mapInstance.panTo({ lat: state.targetStopPt[0], lng: state.targetStopPt[1] });
-                showToast(`Centered on ${state.currentTargetStopName || 'Stop'}`);
-              }
-            },
-            { enableHighAccuracy: true, timeout: 5000 }
-          );
-        } else if (state.mapInstance && state.targetStopPt) {
-          state.mapInstance.panTo({ lat: state.targetStopPt[0], lng: state.targetStopPt[1] });
-          showToast(`Centered on ${state.currentTargetStopName || 'Stop'}`);
-        }
+            }
+          },
+          () => {
+            if (state.mapInstance && state.targetStopPt) {
+              state.mapInstance.panTo({ lat: state.targetStopPt[0], lng: state.targetStopPt[1] });
+              showToast(`Centered on ${state.currentTargetStopName || 'Stop'}`);
+            }
+          }
+        );
       });
     }
 
@@ -4625,18 +5025,21 @@ document.addEventListener('DOMContentLoaded', () => {
     setupNetworkStatus();
     setupHomeFeatures();
     setupAccessibilityControls();
+    setupCalibrateLocationModal();
 
     // Trigger initial high-accuracy GPS check
     requestUserGpsLocation(
-      pos => {
+      (pos, fix) => {
+        updateAllGpsBadges();
         renderHomeNearbyStopCard();
-        renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
+        renderNearbyBusStops();
         if (state.currentScreen === 'nearby-stops-view') {
           renderNearbyStopsScreen();
         }
       },
       err => {
         // Quiet fallback
+        updateAllGpsBadges();
       }
     );
   }
@@ -5576,7 +5979,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderNearbyStopsScreen,
     renderHomeDashboard,
     openLiveMapForStop,
-    findBestUpcomingBusForStop
+    findBestUpcomingBusForStop,
+    openCalibrateLocationModal,
+    applyCalibratedStop
   };
   window.SmartST = window.WMB;
   window.TMB = window.WMB;
