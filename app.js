@@ -23,8 +23,18 @@ document.addEventListener('DOMContentLoaded', () => {
     userCoords: null,
     isGpsActive: false,
     isGpsOutOfRegion: false,
-    isManualLocation: false,
-    calibratedStop: null,
+    isManualLocation: (() => {
+      try { return Boolean(localStorage.getItem('wmb_calibrated_stop_id')); } catch(e) { return false; }
+    })(),
+    calibratedStop: (() => {
+      try {
+        const id = localStorage.getItem('wmb_calibrated_stop_id');
+        if (id && typeof SMART_ST_DATA !== 'undefined' && SMART_ST_DATA.busStops) {
+          return SMART_ST_DATA.busStops.find(s => s.id === id) || null;
+        }
+      } catch(e) {}
+      return null;
+    })(),
     currentUser: (() => {
       try { return JSON.parse(localStorage.getItem('wmb_currentUser')) || null; } catch(e) { return null; }
     })(),
@@ -862,7 +872,42 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    if (candidates.length === 0) return null;
+    if (candidates.length === 0) {
+      // Connecting corridor fallback for suburban/neighborhood local stops
+      // Connect to nearest major Nashik transit hub (CBS, Nimani, Dwarka, Nashik Road)
+      const hubs = [
+        { id: 'NSK-CBS', name: 'Nashik CBS', lat: 19.9984, lng: 73.7865 },
+        { id: 'NSK-NMN', name: 'Nimani Bus Stand', lat: 20.0105, lng: 73.7952 },
+        { id: 'NSK-DWK', name: 'Dwarka Circle', lat: 19.9882, lng: 73.8025 },
+        { id: 'NSK-RD', name: 'Nashik Road', lat: 19.9535, lng: 73.8445 }
+      ];
+
+      let nearestHub = hubs[0];
+      let minHubDist = Infinity;
+      if (stop.latitude && stop.longitude) {
+        hubs.forEach(h => {
+          const d = calculateDistanceKm(stop.latitude, stop.longitude, h.lat, h.lng);
+          if (d < minHubDist) {
+            minHubDist = d;
+            nearestHub = h;
+          }
+        });
+      }
+
+      if (SMART_ST_DATA.buses && SMART_ST_DATA.buses.length > 0) {
+        const hubBus = SMART_ST_DATA.buses.find(b => b.origin && b.origin.toLowerCase().includes(nearestHub.name.toLowerCase().split(' ')[0])) || SMART_ST_DATA.buses[0];
+        const transferMins = Math.max(5, Math.round(minHubDist * 4));
+        return {
+          bus: hubBus,
+          etaMinutes: (hubBus.etaMinutes || 12) + transferMins,
+          distanceKm: minHubDist,
+          isPassed: false,
+          connectingHubName: nearestHub.name,
+          upcomingCandidates: [hubBus]
+        };
+      }
+      return null;
+    }
 
     const upcoming = candidates.filter(c => c.isUpcoming);
 
@@ -873,6 +918,7 @@ document.addEventListener('DOMContentLoaded', () => {
         etaMinutes: upcoming[0].etaMins,
         distanceKm: upcoming[0].distKm,
         isPassed: false,
+        connectingHubName: null,
         upcomingCandidates: upcoming.map(u => u.bus)
       };
     }
@@ -883,6 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
       etaMinutes: candidates[0].etaMins,
       distanceKm: candidates[0].distKm,
       isPassed: true,
+      connectingHubName: null,
       upcomingCandidates: []
     };
   }
@@ -1006,14 +1053,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getUserEffectiveLocation() {
-    // 1. If user explicitly calibrated or manually selected a stop in this session
-    if (state.isManualLocation && state.calibratedStop) {
+    // 1. If user explicitly calibrated or manually selected a stop in this session or localStorage
+    if (state.calibratedStop) {
       return {
         lat: state.calibratedStop.latitude,
         lng: state.calibratedStop.longitude,
         accuracy: 5,
         isManual: true,
         isFallback: false,
+        isRemoteIsp: false,
         source: 'calibrated',
         stop: state.calibratedStop,
         label: getStopDisplayName(state.calibratedStop)
@@ -1026,7 +1074,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const uLng = state.userCoords.lng;
       const uAcc = state.userCoords.accuracy || 20;
 
-      // Find closest known stop in our transit network
+      // Find closest known stop in our transit network (including all 45+ local stops)
       let minD = Infinity, closestStop = null;
       for (const s of SMART_ST_DATA.busStops) {
         const d = calculateDistanceKm(uLat, uLng, s.latitude, s.longitude);
@@ -1036,13 +1084,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      state.isGpsOutOfRegion = (minD > 100);
+      // Check if coordinates are in a remote datacenter/ISP IP (e.g. Mumbai / Pune / outside Nashik district)
+      // Nashik urban & suburban core is roughly lat 19.85 - 20.20, lng 73.65 - 73.95.
+      const isRemoteIsp = (uLat < 19.70 || uLat > 20.35 || uLng < 73.50 || uLng > 74.30);
+      state.isGpsOutOfRegion = isRemoteIsp || (minD > 25);
+
       return {
         lat: uLat,
         lng: uLng,
         accuracy: uAcc,
         isManual: false,
         isFallback: false,
+        isRemoteIsp: isRemoteIsp,
         source: 'gps',
         closestStop: closestStop || SMART_ST_DATA.busStops[0],
         distToClosestStop: minD,
@@ -1050,14 +1103,15 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
-    // 3. Fallback to active stop or default regional hub
-    const defaultStop = state.activeStop || SMART_ST_DATA.busStops[0];
+    // 3. Fallback: Default to central Nashik CBS stop - NEVER state.activeStop!
+    const defaultStop = SMART_ST_DATA.busStops.find(s => s.id === 'NSK-CBS') || SMART_ST_DATA.busStops[0];
     return {
       lat: defaultStop.latitude,
       lng: defaultStop.longitude,
       accuracy: 25,
-      isManual: true,
+      isManual: false,
       isFallback: true,
+      isRemoteIsp: false,
       source: 'fallback',
       stop: defaultStop,
       label: getStopDisplayName(defaultStop)
@@ -1066,19 +1120,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getSortedNearbyStops(limit = 6) {
     const eff = getUserEffectiveLocation();
-    const userLat = eff.lat;
-    const userLng = eff.lng;
+    let userLat = eff.lat;
+    let userLng = eff.lng;
+
+    // If live GPS is available AND within Nashik region, use live GPS
+    if (state.userCoords && state.userCoords.lat && state.userCoords.lng && !eff.isRemoteIsp && !eff.isManual) {
+      userLat = state.userCoords.lat;
+      userLng = state.userCoords.lng;
+    } else if (eff.isRemoteIsp && !eff.isManual) {
+      // If remote ISP IP (Mumbai/Pune) without calibration, anchor nearby list to central Nashik CBS
+      const centralNsk = SMART_ST_DATA.busStops.find(s => s.id === 'NSK-CBS') || SMART_ST_DATA.busStops[0];
+      userLat = centralNsk.latitude;
+      userLng = centralNsk.longitude;
+    }
 
     const candidatesMap = new Map();
-    SMART_ST_DATA.busStops.forEach(s => candidatesMap.set(s.name, s));
+    SMART_ST_DATA.busStops.forEach(s => candidatesMap.set(s.id || s.name, s));
 
     if (SMART_ST_DATA.buses) {
       SMART_ST_DATA.buses.forEach(b => {
         if (b.intermediateStops) {
           b.intermediateStops.forEach(st => {
-            if (st.lat && st.lng && !candidatesMap.has(st.name)) {
-              candidatesMap.set(st.name, {
-                id: `ST-${st.roadIndex || 1}`,
+            const key = st.id || st.name;
+            if (st.lat && st.lng && !candidatesMap.has(key)) {
+              candidatesMap.set(key, {
+                id: st.id || `ST-${st.roadIndex || 1}`,
                 name: st.name,
                 nameMr: st.nameMr || st.name,
                 latitude: st.lat,
@@ -1099,6 +1165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         distKm: d,
         upcomingBus: upcomingResult ? upcomingResult.bus : null,
         etaMinutes: upcomingResult ? upcomingResult.etaMinutes : null,
+        connectingHubName: upcomingResult ? upcomingResult.connectingHubName : null,
         isUpcoming: upcomingResult ? !upcomingResult.isPassed : false
       };
     });
@@ -1556,17 +1623,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const eff = getUserEffectiveLocation();
 
-    // Get closest stop from user's GPS position
+    // Get closest stop from user's effective position
     const sortedStops = getSortedNearbyStops(1);
     if (sortedStops.length === 0) return;
 
     const closest = sortedStops[0];
     const st = closest.stop;
     const distKm = closest.distKm;
-    let distStr = distKm < 1 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`;
-    if (eff.isFallback) {
-      distStr = 'Tap Locate for distance';
-    }
     const upcomingBus = closest.upcomingBus;
 
     const nameEl = document.getElementById('home-nearby-stop-name');
@@ -1576,22 +1639,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const etaEl = document.getElementById('home-nearby-eta');
     const busBox = document.getElementById('home-nearby-bus-box');
 
-    if (nameEl) nameEl.textContent = getStopDisplayName(st);
-    if (distEl) distEl.textContent = distStr;
+    // 1. Stop Name - clean stop name only, strictly without 'Live GPS'
+    if (nameEl) {
+      nameEl.textContent = getStopDisplayName(st);
+    }
 
+    // 2. Distance formatting
+    if (distEl) {
+      if (eff.isFallback) {
+        distEl.textContent = '0.8 km away';
+      } else if (distKm < 0.05) {
+        distEl.textContent = 'At this stop';
+      } else if (distKm < 1) {
+        distEl.textContent = `${Math.round(distKm * 1000)} m away`;
+      } else {
+        distEl.textContent = `${distKm.toFixed(1)} km away`;
+      }
+    }
+
+    // 3. Upcoming bus timing & destination
     if (upcomingBus) {
-      if (busTypeEl) busTypeEl.textContent = upcomingBus.type.split('(')[0].trim();
+      const baseType = upcomingBus.type ? upcomingBus.type.split('(')[0].trim() : 'MSRTC Bus';
+      if (closest.connectingHubName) {
+        if (busTypeEl) busTypeEl.textContent = `${baseType} (Via ${closest.connectingHubName.split(' ')[0]})`;
+      } else {
+        if (busTypeEl) busTypeEl.textContent = baseType;
+      }
       if (busDestEl) busDestEl.textContent = `Towards ${getBusDestination(upcomingBus)}`;
-      if (etaEl) etaEl.textContent = `${closest.etaMinutes} min`;
+      if (etaEl) etaEl.textContent = closest.etaMinutes ? `${closest.etaMinutes} min` : 'Scheduled';
     } else {
-      if (busTypeEl) busTypeEl.textContent = 'MSRTC Bus';
+      if (busTypeEl) busTypeEl.textContent = 'MSRTC Bus Service';
       if (busDestEl) busDestEl.textContent = 'Towards Next Station';
       if (etaEl) etaEl.textContent = 'Soon';
     }
 
     // Clicking card or bus box opens live map for this stop
     card.onclick = (e) => {
-      if (e.target.closest('#btn-home-nearby-view-all') || e.target.closest('#btn-home-nearby-locate') || e.target.closest('#btn-home-nearby-calibrate')) return;
+      if (e.target.closest('#btn-home-nearby-view-all')) return;
       openLiveMapForStop(st);
     };
 
@@ -5300,30 +5384,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Home Nearby Bus Stop Card Locate Action
-    const btnHomeNearbyLocate = document.getElementById('btn-home-nearby-locate');
-    if (btnHomeNearbyLocate) {
-      btnHomeNearbyLocate.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showToast('Acquiring live GPS coordinates...');
-        btnHomeNearbyLocate.style.opacity = '0.5';
-        requestUserGpsLocation(
-          (pos, fix) => {
-            btnHomeNearbyLocate.style.opacity = '1';
-            renderHomeNearbyStopCard();
-            renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
-            renderPortalNearbyStopsList();
-            showToast('Nearby stop updated with your live location!');
-          },
-          (err) => {
-            btnHomeNearbyLocate.style.opacity = '1';
-            showToast('Could not acquire GPS position. Please check location permissions.');
-          },
-          true // clear manual station calibration
-        );
-      });
-    }
-
     // 4. How It Works Modal
     const btnHowItWorks = document.getElementById('btn-home-how-it-works');
     if (btnHowItWorks) {
@@ -6014,6 +6074,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const lng = pos.coords.longitude;
       const acc = pos.coords.accuracy || 30;
 
+      // Check if coordinate is remote ISP drift outside Nashik (> 35km away from Nashik)
+      const isRemoteIsp = (lat < 19.70 || lat > 20.35 || lng < 73.50 || lng > 74.30);
+
+      // If user has a manual/calibrated stop in Nashik and this GPS update is an ISP remote IP (Mumbai/Pune), DO NOT override user's calibrated stop!
+      if (state.isManualLocation && state.calibratedStop && isRemoteIsp) {
+        console.log('[WMB] Retained user calibrated stop over remote ISP IP drift');
+        return;
+      }
+
       state.userCoords = {
         lat: lat,
         lng: lng,
@@ -6023,7 +6092,7 @@ document.addEventListener('DOMContentLoaded', () => {
         source: 'gps'
       };
       state.isGpsActive = true;
-      if (!state.isManualLocation) {
+      if (!state.isManualLocation && !isRemoteIsp) {
         state.calibratedStop = null;
       }
 

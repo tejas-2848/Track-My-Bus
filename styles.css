@@ -3844,42 +3844,6 @@ body.dark-mode .home-fav-chip {
   color: var(--apple-label-secondary);
 }
 
-.home-nearby-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-home-action-chip {
-  background: var(--apple-bg-primary);
-  border: 0.5px solid var(--apple-separator);
-  border-radius: var(--radius-sm);
-  color: var(--apple-tint);
-  font-size: 11.5px;
-  font-weight: 600;
-  padding: 3px 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  font-family: inherit;
-}
-
-.btn-home-action-chip:hover {
-  background: var(--apple-tint-subtle);
-  border-color: var(--apple-tint);
-}
-
-body.dark-mode .btn-home-action-chip {
-  background: var(--bg-surface);
-  border-color: var(--border-subtle);
-  color: #38BDF8;
-}
-
-body.dark-mode .btn-home-action-chip:hover {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: #38BDF8;
 }
 
 .home-nearby-view-all {

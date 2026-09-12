@@ -6691,6 +6691,1327 @@ const SMART_ST_DATA = {
         }
       ]
     }
+  ,
+    {
+        "id": "NSK-CLG-BYK",
+        "qrCode": "MSRTC-MH15-BYKCLG",
+        "name": "College Road (BYK College)",
+        "nameMr": "कॉलेज रोड (बी.वाय.के. कॉलेज)",
+        "nameHi": "कॉलेज रोड (बी.वाई.के. कॉलेज)",
+        "village": "College Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422005",
+        "latitude": 20.0075,
+        "longitude": 73.7635,
+        "landmark": "BYK College of Commerce / KTHM Circle",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local City Boarding Shed",
+                "available": true
+            },
+            {
+                "name": "Digital Timetable Schedule",
+                "available": true
+            },
+            {
+                "name": "Drinking Water Facility",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Depot Manager",
+                "number": "0253-2578241"
+            },
+            {
+                "label": "MSRTC Helpline",
+                "number": "1800-22-1250"
+            },
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CLG-RYK",
+        "qrCode": "MSRTC-MH15-RYKSCI",
+        "name": "RYK Science College",
+        "nameMr": "आर.वाय.के. सायन्स कॉलेज",
+        "nameHi": "आर.वाई.के. साइंस कॉलेज",
+        "village": "College Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422005",
+        "latitude": 20.0062,
+        "longitude": 73.7682,
+        "landmark": "Circle Cinema / College Road",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            },
+            {
+                "name": "Digital Timetable Schedule",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Depot Manager",
+                "number": "0253-2578241"
+            },
+            {
+                "label": "MSRTC Helpline",
+                "number": "1800-22-1250"
+            },
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CLG-CND",
+        "qrCode": "MSRTC-MH15-CNDCRN",
+        "name": "Canada Corner",
+        "nameMr": "कॅनडा कॉर्नर",
+        "nameHi": "कनाडा कॉर्नर",
+        "village": "Sharanpur",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422005",
+        "latitude": 20.0018,
+        "longitude": 73.7745,
+        "landmark": "Sharanpur Road Junction / Police Commissionerate",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            },
+            {
+                "name": "Digital Timetable Schedule",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Depot Manager",
+                "number": "0253-2578241"
+            },
+            {
+                "label": "MSRTC Helpline",
+                "number": "1800-22-1250"
+            },
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CLG-BHS",
+        "qrCode": "MSRTC-MH15-BHSMIL",
+        "name": "Bhosala Military School",
+        "nameMr": "भोसला मिलिटरी स्कूल",
+        "nameHi": "भोसला मिलिट्री स्कूल",
+        "village": "College Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422005",
+        "latitude": 20.0152,
+        "longitude": 73.7548,
+        "landmark": "Bhosala Campus / College Rd Ext",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Depot Manager",
+                "number": "0253-2578241"
+            },
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-GNG-KTM",
+        "qrCode": "MSRTC-MH15-KTHMCL",
+        "name": "KTHM College (Gangapur Rd)",
+        "nameMr": "के.टी.एच.एम. कॉलेज",
+        "nameHi": "के.टी.एच.एम. कॉलेज",
+        "village": "Gangapur Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422002",
+        "latitude": 20.0078,
+        "longitude": 73.7765,
+        "landmark": "KTHM Campus / Godavari River Bank",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            },
+            {
+                "name": "Digital Timetable Schedule",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Depot Manager",
+                "number": "0253-2578241"
+            },
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-GNG-DNG",
+        "qrCode": "MSRTC-MH15-DNGVST",
+        "name": "Dongre Vasti Ground",
+        "nameMr": "डोंगर वसती मैदान",
+        "nameHi": "डोंगरे वस्ती मैदान",
+        "village": "Gangapur Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422002",
+        "latitude": 20.0065,
+        "longitude": 73.7715,
+        "landmark": "Dongre Vasti / Gangapur Road",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-GNG-JHN",
+        "qrCode": "MSRTC-MH15-JHNCIR",
+        "name": "Jehan Circle (Gangapur Rd)",
+        "nameMr": "जहान सर्कल",
+        "nameHi": "जहान सर्कल",
+        "village": "Gangapur Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422013",
+        "latitude": 20.0142,
+        "longitude": 73.7668,
+        "landmark": "Jehan Circle Chowk",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-GNG-ABB",
+        "qrCode": "MSRTC-MH15-ABBCIR",
+        "name": "ABB Circle (Mahatma Nagar)",
+        "nameMr": "ए.बी.बी. सर्कल (महात्मा नगर)",
+        "nameHi": "ए.बी.बी. सर्कल (महात्मा नगर)",
+        "village": "Mahatma Nagar",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422007",
+        "latitude": 19.9985,
+        "longitude": 73.7585,
+        "landmark": "Mahatma Nagar Junction",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-GNG-PRJ",
+        "qrCode": "MSRTC-MH15-PRJNGR",
+        "name": "Parijat Nagar (Gangapur Rd)",
+        "nameMr": "पारिजात नगर",
+        "nameHi": "पारिजात नगर",
+        "village": "Gangapur Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422013",
+        "latitude": 20.0185,
+        "longitude": 73.7612,
+        "landmark": "Parijat Nagar Bus Stop",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-GNG-BRD",
+        "qrCode": "MSRTC-MH15-BRDPHT",
+        "name": "Bardan Phata (Gangapur Rd)",
+        "nameMr": "बरदान फाटा",
+        "nameHi": "बरदान फाटा",
+        "village": "Gangapur Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422013",
+        "latitude": 20.0275,
+        "longitude": 73.7425,
+        "landmark": "Bardan Phata Junction",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-GNG-SMS",
+        "qrCode": "MSRTC-MH15-SMSFLL",
+        "name": "Someshwar Waterfall Phata",
+        "nameMr": "सोमेश्वर धबधबा फाटा",
+        "nameHi": "सोमेश्वर झरना फाटा",
+        "village": "Someshwar",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422013",
+        "latitude": 20.0315,
+        "longitude": 73.7345,
+        "landmark": "Someshwar Temple Phata",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-GNG-VLG",
+        "qrCode": "MSRTC-MH15-GNGVLG",
+        "name": "Gangapur Gaon Bus Stand",
+        "nameMr": "गंगापूर गाव बस स्थानक",
+        "nameHi": "गंगापुर गांव बस स्टैंड",
+        "village": "Gangapur",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422222",
+        "latitude": 20.0385,
+        "longitude": 73.7215,
+        "landmark": "Gangapur Village Center",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CDC-TRM",
+        "qrCode": "MSRTC-MH15-TRMCDK",
+        "name": "Trimurti Chowk (Cidco)",
+        "nameMr": "त्रिमूर्ती चौक (सिडको)",
+        "nameHi": "त्रिमूर्ति चौक (सिडको)",
+        "village": "Cidco",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9725,
+        "longitude": 73.7515,
+        "landmark": "Trimurti Chowk Market",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            },
+            {
+                "name": "Digital Timetable Schedule",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CDC-PWN",
+        "qrCode": "MSRTC-MH15-PWNNGR",
+        "name": "Pawan Nagar (Cidco)",
+        "nameMr": "पवन नगर (सिडको)",
+        "nameHi": "पवन नगर (सिडको)",
+        "village": "Cidco",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9685,
+        "longitude": 73.7562,
+        "landmark": "Pawan Nagar Water Tank",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CDC-SMB",
+        "qrCode": "MSRTC-MH15-SMBCDK",
+        "name": "Sambhaji Chowk (Cidco)",
+        "nameMr": "संभाजी चौक (सिडको)",
+        "nameHi": "संभाजी चौक (सिडको)",
+        "village": "Cidco",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9652,
+        "longitude": 73.7485,
+        "landmark": "Sambhaji Chowk Stadium",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CDC-UTM",
+        "qrCode": "MSRTC-MH15-UTMNGR",
+        "name": "Uttam Nagar (Cidco)",
+        "nameMr": "उत्तम नगर (सिडको)",
+        "nameHi": "उत्तम नगर (सिडको)",
+        "village": "Cidco",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9745,
+        "longitude": 73.7442,
+        "landmark": "Uttam Nagar Shopping Complex",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CDC-MRW",
+        "qrCode": "MSRTC-MH15-MRWCDK",
+        "name": "Morwadi Chowk (Cidco)",
+        "nameMr": "मोरवाडी चौक",
+        "nameHi": "मोरवाडी चौक",
+        "village": "Cidco",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9625,
+        "longitude": 73.7412,
+        "landmark": "Morwadi Road Junction",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CDC-LKH",
+        "qrCode": "MSRTC-MH15-LKHNGR",
+        "name": "Lekha Nagar (Cidco Highway)",
+        "nameMr": "लेखा नगर (सिडको हायवे)",
+        "nameHi": "लेखा नगर (सिडको हाईवे)",
+        "village": "Cidco",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9585,
+        "longitude": 73.7625,
+        "landmark": "Lekha Nagar Flyover Point",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CDC-KHT",
+        "qrCode": "MSRTC-MH15-KHTNGR",
+        "name": "Khutwad Nagar",
+        "nameMr": "खुटवड नगर",
+        "nameHi": "खुटवड नगर",
+        "village": "Cidco",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9785,
+        "longitude": 73.7485,
+        "landmark": "Khutwad Nagar Bus Stop",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CDC-RND",
+        "qrCode": "MSRTC-MH15-RNDSGN",
+        "name": "Rane Nagar Signal",
+        "nameMr": "राणे नगर सिग्नल",
+        "nameHi": "राणे नगर सिग्नल",
+        "village": "Cidco",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9542,
+        "longitude": 73.7658,
+        "landmark": "Mumbai-Agra Highway Crossing",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-IND-JOG",
+        "qrCode": "MSRTC-MH15-INDJOG",
+        "name": "Indira Nagar Jogging Track",
+        "nameMr": "इंदिरा नगर जॉगिंग ट्रॅक",
+        "nameHi": "इंदिरा नगर जॉगिंग ट्रैक",
+        "village": "Indira Nagar",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9682,
+        "longitude": 73.7785,
+        "landmark": "Indira Nagar Central Park",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-IND-GVN",
+        "qrCode": "MSRTC-MH15-GVNCDK",
+        "name": "Govind Nagar Chowk",
+        "nameMr": "गोविंद नगर चौक",
+        "nameHi": "गोविंद नगर चौक",
+        "village": "Govind Nagar",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9795,
+        "longitude": 73.7712,
+        "landmark": "Govind Nagar Main Road",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-IND-CCM",
+        "qrCode": "MSRTC-MH15-CCMNAS",
+        "name": "City Centre Mall (Nashik)",
+        "nameMr": "सिटी सेंटर मॉल (नाशिक)",
+        "nameHi": "सिटी सेंटर मॉल (नाशिक)",
+        "village": "Untwadi",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422002",
+        "latitude": 19.9835,
+        "longitude": 73.7652,
+        "landmark": "Nashik City Centre Mall Main Gate",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            },
+            {
+                "name": "Digital Timetable Schedule",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-IND-RJV",
+        "qrCode": "MSRTC-MH15-RJVPHT",
+        "name": "Rajiv Nagar Phata",
+        "nameMr": "राजीव नगर फाटा",
+        "nameHi": "राजीव नगर फाटा",
+        "village": "Indira Nagar",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422009",
+        "latitude": 19.9615,
+        "longitude": 73.7745,
+        "landmark": "Rajiv Nagar Underpass",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-IND-WDL",
+        "qrCode": "MSRTC-MH15-WDLNAK",
+        "name": "Wadala Naka / Gaon",
+        "nameMr": "वडाळा नाका",
+        "nameHi": "वडाला नाका",
+        "village": "Wadala",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422006",
+        "latitude": 19.9812,
+        "longitude": 73.7915,
+        "landmark": "Wadala Chowk Junction",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-IND-ASH",
+        "qrCode": "MSRTC-MH15-ASHMRG",
+        "name": "Ashoka Marg Signal",
+        "nameMr": "अशोका मार्ग सिग्नल",
+        "nameHi": "अशोका मार्ग सिग्नल",
+        "village": "Wadala",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422006",
+        "latitude": 19.9765,
+        "longitude": 73.7985,
+        "landmark": "Ashoka Universal School Corner",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-AMB-XLO",
+        "qrCode": "MSRTC-MH15-XLOPNT",
+        "name": "XLO Point (Ambad MIDC)",
+        "nameMr": "एक्स.एल.ओ. पॉईंट (अंबड)",
+        "nameHi": "एक्स.एल.ओ. पॉइंट (अंबड)",
+        "village": "Ambad MIDC",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422010",
+        "latitude": 19.9485,
+        "longitude": 73.7285,
+        "landmark": "XLO Industrial Junction",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-AMB-GRW",
+        "qrCode": "MSRTC-MH15-GRWPNT",
+        "name": "Garware Point (Ambad)",
+        "nameMr": "गरवारे पॉईंट (अंबड)",
+        "nameHi": "गरवारे पॉइंट (अंबड)",
+        "village": "Ambad MIDC",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422010",
+        "latitude": 19.9415,
+        "longitude": 73.7195,
+        "landmark": "Garware Polyesters Gate",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-AMB-MID",
+        "qrCode": "MSRTC-MH15-AMBVLG",
+        "name": "Ambad Village Stand",
+        "nameMr": "अंबड गाव स्थानक",
+        "nameHi": "अंबड गांव स्टैंड",
+        "village": "Ambad",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422010",
+        "latitude": 19.9515,
+        "longitude": 73.7385,
+        "landmark": "Ambad Gaon Mandir",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-STP-ITI",
+        "qrCode": "MSRTC-MH15-ITISGN",
+        "name": "ITI Signal (Satpur)",
+        "nameMr": "आय.टी.आय. सिग्नल (सातपूर)",
+        "nameHi": "आई.टी.आई. सिग्नल (सातपुर)",
+        "village": "Satpur",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422007",
+        "latitude": 19.9985,
+        "longitude": 73.7452,
+        "landmark": "Government ITI Satpur Gate",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-STP-ASH",
+        "qrCode": "MSRTC-MH15-ASHNGR",
+        "name": "Ashok Nagar (Satpur)",
+        "nameMr": "अशोक नगर (सातपूर)",
+        "nameHi": "अशोक नगर (सातपुर)",
+        "village": "Satpur",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422012",
+        "latitude": 20.0085,
+        "longitude": 73.7315,
+        "landmark": "Ashok Nagar Main Stop",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-STP-CRB",
+        "qrCode": "MSRTC-MH15-CRBNAK",
+        "name": "Carbon Naka (Trimbak Rd)",
+        "nameMr": "कार्बन नाका (त्र्यंबक रोड)",
+        "nameHi": "कार्बन नाका (त्र्यंबक रोड)",
+        "village": "Satpur MIDC",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422007",
+        "latitude": 19.9952,
+        "longitude": 73.7245,
+        "landmark": "Carbon Factory Gate",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-PCV-RNK",
+        "qrCode": "MSRTC-MH15-RAMKND",
+        "name": "Ramkund (Panchavati)",
+        "nameMr": "रामकुंड (पंचवटी)",
+        "nameHi": "रामकुंड (पंचवटी)",
+        "village": "Panchavati",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422003",
+        "latitude": 20.0052,
+        "longitude": 73.7925,
+        "landmark": "Godavari Ramkund Ghat",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-PCV-TPV",
+        "qrCode": "MSRTC-MH15-TPVCDK",
+        "name": "Tapovan Chowk",
+        "nameMr": "तपोवन चौक",
+        "nameHi": "तपोवन चौक",
+        "village": "Panchavati",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422003",
+        "latitude": 20.0042,
+        "longitude": 73.8055,
+        "landmark": "Tapovan Laxman Temple Road",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-PCV-DND",
+        "qrCode": "MSRTC-MH15-DNDNAK",
+        "name": "Dindori Naka (Panchavati)",
+        "nameMr": "दिंडोरी नाका (पंचवटी)",
+        "nameHi": "दिंडोरी नाका (पंचवटी)",
+        "village": "Panchavati",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422003",
+        "latitude": 20.0152,
+        "longitude": 73.7985,
+        "landmark": "Panchavati Dindori Road Junction",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-PCV-MER",
+        "qrCode": "MSRTC-MH15-MERCLN",
+        "name": "Meri Colony (Dindori Rd)",
+        "nameMr": "मेरी कॉलनी",
+        "nameHi": "मेरी कॉलोनी",
+        "village": "Mhasrul",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422004",
+        "latitude": 20.0285,
+        "longitude": 73.8025,
+        "landmark": "Maharashtra Engineering Research Institute Gate",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-PCV-RTO",
+        "qrCode": "MSRTC-MH15-RTOOFF",
+        "name": "RTO Office (Peth Road)",
+        "nameMr": "आर.टी.ओ. कार्यालय (पेठ रोड)",
+        "nameHi": "आर.टी.ओ. कार्यालय (पेठ रोड)",
+        "village": "Panchavati",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422003",
+        "latitude": 20.0345,
+        "longitude": 73.7915,
+        "landmark": "Nashik Regional Transport Office",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-PCV-AMT",
+        "qrCode": "MSRTC-MH15-AMTCDK",
+        "name": "Amrutdham Chowk",
+        "nameMr": "अमृतधाम चौक",
+        "nameHi": "अमृतधाम चौक",
+        "village": "Panchavati",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422003",
+        "latitude": 20.0215,
+        "longitude": 73.8245,
+        "landmark": "Amrutdham Main Stop / K.K. Wagh College",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-PCV-MHS",
+        "qrCode": "MSRTC-MH15-MHSVLG",
+        "name": "Mhasrul Gaon Stand",
+        "nameMr": "म्हसरूळ गाव स्थानक",
+        "nameHi": "म्हसरूल गांव स्टैंड",
+        "village": "Mhasrul",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422004",
+        "latitude": 20.0415,
+        "longitude": 73.8062,
+        "landmark": "Mhasrul Village Gate",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-PCV-MKM",
+        "qrCode": "MSRTC-MH15-MKMNAK",
+        "name": "Makhmalabad Naka",
+        "nameMr": "मखमलाबाद नाका",
+        "nameHi": "मखमलाबाद नाका",
+        "village": "Panchavati",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422003",
+        "latitude": 20.0255,
+        "longitude": 73.7845,
+        "landmark": "Makhmalabad Road Octroi",
+        "isMajor": false,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-NRD-UPN",
+        "qrCode": "MSRTC-MH15-UPNSGN",
+        "name": "Upnagar Signal (Nashik Rd)",
+        "nameMr": "उपनगर सिग्नल",
+        "nameHi": "उपनगर सिग्नल",
+        "village": "Upnagar",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422006",
+        "latitude": 19.9685,
+        "longitude": 73.8185,
+        "landmark": "Nashik-Pune Highway Upnagar Crossing",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-NRD-JAL",
+        "qrCode": "MSRTC-MH15-JALRD",
+        "name": "Jail Road (Shivaji Nagar)",
+        "nameMr": "जेल रोड (शिवाजी नगर)",
+        "nameHi": "जेल रोड (शिवाजी नगर)",
+        "village": "Nashik Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422101",
+        "latitude": 19.9545,
+        "longitude": 73.8345,
+        "landmark": "Central Jail Colony / Shivaji Nagar",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-NRD-MKT",
+        "qrCode": "MSRTC-MH15-MKTMDN",
+        "name": "Muktidham Mandir",
+        "nameMr": "मुक्तीधाम मंदिर स्थानक",
+        "nameHi": "मुक्तिधाम मंदिर स्टैंड",
+        "village": "Nashik Road",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422101",
+        "latitude": 19.9482,
+        "longitude": 73.8415,
+        "landmark": "Muktidham Marble Temple Gate",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-DEO-CMP",
+        "qrCode": "MSRTC-MH15-DEOCMP",
+        "name": "Deolali Camp Bus Stand",
+        "nameMr": "देवळाली कॅम्प बस स्थानक",
+        "nameHi": "देवलाली कैंप बस स्टैंड",
+        "village": "Deolali Camp",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422401",
+        "latitude": 19.9142,
+        "longitude": 73.8315,
+        "landmark": "Military Cantonment Depot",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    },
+    {
+        "id": "NSK-CTY-ASK",
+        "qrCode": "MSRTC-MH15-ASKSTB",
+        "name": "Ashok Stambh",
+        "nameMr": "अशोक स्तंभ",
+        "nameHi": "अशोक स्तंभ",
+        "village": "Old Nashik",
+        "taluka": "Nashik",
+        "district": "Nashik",
+        "pincode": "422001",
+        "latitude": 20.0012,
+        "longitude": 73.7825,
+        "landmark": "Ashok Stambh Chowk / Court Rd",
+        "isMajor": true,
+        "photo": "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+        "facilities": [
+            {
+                "name": "Local Boarding Shelter",
+                "available": true
+            }
+        ],
+        "emergencyContacts": [
+            {
+                "label": "Police Helpline",
+                "number": "112"
+            }
+        ]
+    }
   ],
   "routes": [
     {

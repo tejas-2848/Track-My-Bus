@@ -252,20 +252,10 @@
               </span>
               <span class="home-nearby-label" data-i18n="nearbyStop">Nearby Bus Stop</span>
             </div>
-            <div class="home-nearby-actions">
-              <button type="button" class="btn-home-action-chip" id="btn-home-nearby-locate" title="Locate with GPS">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><circle cx="12" cy="12" r="2"></circle></svg>
-                <span>Locate</span>
-              </button>
-              <button type="button" class="btn-home-action-chip" id="btn-home-nearby-calibrate" title="Change Station">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                <span>Change</span>
-              </button>
-              <button type="button" class="home-nearby-view-all" id="btn-home-nearby-view-all" data-screen-target="nearby-stops-view">
-                <span>View All</span>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </button>
-            </div>
+            <button type="button" class="home-nearby-view-all" id="btn-home-nearby-view-all" data-screen-target="nearby-stops-view">
+              <span>View All</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
           </div>
 
           <div class="home-nearby-stop-info">
@@ -1739,13 +1729,35 @@
           <span id="calibrate-rescan-text">Start 8-Second Satellite GPS Lock</span>
         </button>
 
-        <!-- Action 2: Quick Pick Major Hubs -->
-        <div class="calibrate-section-title mt-4">Select Bus Station Hub</div>
+        <!-- Action 2: Local City Bus Stops & Neighborhoods -->
+        <div class="calibrate-section-title mt-4">Local City Bus Stops (Nashik Urban Area)</div>
         <p class="text-xs text-secondary" style="margin-bottom: 8px;">
-          Tap your current station or hub to immediately snap all ETAs and distances with 100% precision:
+          Tap your local neighborhood or college bus stop to snap arrivals with 100% precision:
         </p>
+        <div class="calibrate-chips-wrap" id="calibrate-local-chips">
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-CLG-BYK">College Road (BYK)</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-CLG-RYK">RYK Science College</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-CLG-CND">Canada Corner</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-GNG-JHN">Gangapur Rd (Jehan Cir)</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-GNG-KTM">KTHM College</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-CDC-TRM">Cidco (Trimurti Chowk)</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-CDC-PWN">Cidco (Pawan Nagar)</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-IND-JOG">Indira Nagar Jogging Track</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-IND-GVN">Govind Nagar</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-IND-CCM">City Centre Mall</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-STP-ITI">Satpur (ITI Signal)</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-AMB-XLO">Ambad (XLO Point)</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-NMN">Panchavati (Nimani)</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-PCV-RNK">Ramkund (Panchavati)</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-CTY-ASK">Ashok Stambh</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-NRD-UPN">Upnagar Signal</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-DEO-CMP">Deolali Camp</button>
+        </div>
+
+        <!-- Action 3: Regional Inter-City Highway Hubs -->
+        <div class="calibrate-section-title mt-4">Regional Highway Bus Stations & Depots</div>
         <div class="calibrate-chips-wrap" id="calibrate-hub-chips">
-          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-CBS">Nashik CBS</button>
+          <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-CBS">Nashik CBS (Thakkar Bazar)</button>
           <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-DWK">Dwarka Circle</button>
           <button type="button" class="btn-calibrate-chip" data-stop-id="NSK-RD">Nashik Road</button>
           <button type="button" class="btn-calibrate-chip" data-stop-id="YEO-BS">Yeola Bus Stand</button>
@@ -1761,8 +1773,8 @@
           <button type="button" class="btn-calibrate-chip" data-stop-id="SNR-BS">Sinnar Industrial</button>
         </div>
 
-        <!-- Action 3: Search All 142 Stops & Phatas -->
-        <div class="calibrate-section-title mt-4">Search All 142 Stages & Rural Phatas</div>
+        <!-- Action 4: Search All 187 Stops & Phatas -->
+        <div class="calibrate-section-title mt-4">Search All 187 Stages, Suburbs & Phatas</div>
         <div class="search-box-wrap mt-1">
           <svg class="search-icon-pos" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"/>
