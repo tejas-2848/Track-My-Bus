@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedBus: null,
     userCoords: null,
     isGpsActive: false,
+    gpsRequestVersion: 0,
+    userLocationUpdatedAt: 0,
+    gpsLocationError: null,
     currentUser: (() => {
       try { return JSON.parse(localStorage.getItem('wmb_currentUser')) || null; } catch(e) { return null; }
     })(),
@@ -950,38 +953,98 @@ document.addEventListener('DOMContentLoaded', () => {
       if (onError) onError(new Error('Geolocation not supported'));
       return;
     }
+
+    // Geolocation is asynchronous. A stale result from an earlier request must
+    // not replace the position requested most recently by the commuter.
+    const requestVersion = ++state.gpsRequestVersion;
+    let watchId = null;
+    let hasPosition = false;
+    let hasReportedError = false;
+    const GPS_ACQUIRE_TIMEOUT_MS = 30000;
+
+    const clearLocationWatch = () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+    };
+
+    const applyPosition = (pos, isWatchUpdate = false) => {
+      if (requestVersion !== state.gpsRequestVersion) {
+        clearLocationWatch();
+        return;
+      }
+
+      const latitude = Number(pos.coords.latitude);
+      const longitude = Number(pos.coords.longitude);
+      const accuracy = Number(pos.coords.accuracy);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+
+      // Populate the card as soon as a position is available. A later
+      // watchPosition fix can replace the initial network estimate even when
+      // browsers report a less optimistic accuracy number for the real GPS fix.
+      const normalizedAccuracy = Number.isFinite(accuracy) ? accuracy : Infinity;
+      if (hasPosition && !isWatchUpdate) return;
+
+      hasPosition = true;
+
+      state.userCoords = {
+        lat: latitude,
+        lng: longitude,
+        accuracy: normalizedAccuracy
+      };
+      state.isGpsActive = true;
+      state.userLocationUpdatedAt = Date.now();
+      state.gpsLocationError = null;
+      if (onSuccess) onSuccess(pos, state.userCoords);
+    };
+
+    const handleError = (err) => {
+      if (requestVersion !== state.gpsRequestVersion || hasPosition || hasReportedError) return;
+      hasReportedError = true;
+      state.isGpsActive = false;
+      state.gpsLocationError = err;
+      if (onError) onError(err);
+    };
+
+    // Return the first available browser position immediately so Home does not
+    // get stuck, then keep watching briefly for a more accurate device GPS fix.
     navigator.geolocation.getCurrentPosition(
-      pos => {
-        state.userCoords = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy
-        };
-        state.isGpsActive = true;
-        if (onSuccess) onSuccess(pos);
-      },
-      err => {
-        state.isGpsActive = false;
-        if (onError) onError(err);
-      },
+      pos => applyPosition(pos, false),
+      handleError,
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
+    watchId = navigator.geolocation.watchPosition(
+      pos => applyPosition(pos, true),
+      handleError,
+      { enableHighAccuracy: true, timeout: GPS_ACQUIRE_TIMEOUT_MS, maximumAge: 0 }
+    );
+
+    setTimeout(() => {
+      if (requestVersion !== state.gpsRequestVersion) return;
+      clearLocationWatch();
+      if (!hasPosition) {
+        handleError(new Error('Timed out while acquiring location'));
+      }
+    }, GPS_ACQUIRE_TIMEOUT_MS);
   }
 
   function getSortedNearbyStops(limit = 6) {
-    let userLat = state.userCoords ? state.userCoords.lat : null;
-    let userLng = state.userCoords ? state.userCoords.lng : null;
+    let userLat = state.userCoords ? Number(state.userCoords.lat) : null;
+    let userLng = state.userCoords ? Number(state.userCoords.lng) : null;
 
-    if (!userLat || !userLng) {
+    if (!Number.isFinite(userLat) || !Number.isFinite(userLng)) {
       if (state.activeStop && state.activeStop.latitude && state.activeStop.longitude) {
-        userLat = state.activeStop.latitude;
-        userLng = state.activeStop.longitude;
+        userLat = Number(state.activeStop.latitude);
+        userLng = Number(state.activeStop.longitude);
       } else {
         userLat = 19.9975; // Nashik CBS
         userLng = 73.7898;
       }
     }
 
+    // Every mapped village, phata, and small stop is eligible for nearby-stop
+    // results. Keep physical stops and route waypoints in one de-duplicated set.
     const candidatesMap = new Map();
     SMART_ST_DATA.busStops.forEach(s => candidatesMap.set(s.name, s));
 
@@ -989,7 +1052,7 @@ document.addEventListener('DOMContentLoaded', () => {
       SMART_ST_DATA.buses.forEach(b => {
         if (b.intermediateStops) {
           b.intermediateStops.forEach(st => {
-            if (st.lat && st.lng && !candidatesMap.has(st.name)) {
+            if (Number.isFinite(Number(st.lat)) && Number.isFinite(Number(st.lng)) && !candidatesMap.has(st.name)) {
               candidatesMap.set(st.name, {
                 id: `ST-${st.roadIndex || 1}`,
                 name: st.name,
@@ -1004,7 +1067,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const stopList = Array.from(candidatesMap.values()).map(st => {
+    const stopList = Array.from(candidatesMap.values())
+      .filter(st => Number.isFinite(Number(st.latitude)) && Number.isFinite(Number(st.longitude)))
+      .map(st => {
       const d = calculateDistanceKm(userLat, userLng, st.latitude, st.longitude);
       const upcomingResult = findBestUpcomingBusForStop(st);
       return {
@@ -1195,13 +1260,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Dynamic Live Nearby Bus Stop Card
     renderHomeNearbyStopCard();
+
+    // Ask for location when the commuter reaches Home, not during the splash
+    // screen. This ensures the card is populated from their current GPS fix.
+    const GPS_LOCATION_MAX_AGE_MS = 60 * 1000;
+    const locationIsStale = Date.now() - state.userLocationUpdatedAt > GPS_LOCATION_MAX_AGE_MS;
+    if (!state.isGpsActive || !state.userCoords || locationIsStale) {
+      requestUserGpsLocation(
+        () => renderHomeNearbyStopCard(),
+        () => renderHomeNearbyStopCard()
+      );
+    }
   }
 
   function renderHomeNearbyStopCard() {
     const card = document.getElementById('home-nearby-card');
     if (!card) return;
 
+    const nameEl = document.getElementById('home-nearby-stop-name');
+    const distEl = document.getElementById('home-nearby-stop-dist');
+    const busTypeEl = document.getElementById('home-nearby-bus-type');
+    const busDestEl = document.getElementById('home-nearby-bus-dest');
+    const etaEl = document.getElementById('home-nearby-eta');
+    const busBox = document.getElementById('home-nearby-bus-box');
+
     // Get closest stop from user's GPS position
+    const hasUserLocation = state.userCoords &&
+      Number.isFinite(Number(state.userCoords.lat)) &&
+      Number.isFinite(Number(state.userCoords.lng));
+
+    if (!hasUserLocation) {
+      const locationUnavailable = Boolean(state.gpsLocationError);
+      // Do not leave the server/default stop visible while GPS is resolving.
+      // The Home GPS request rerenders this card as soon as coordinates arrive.
+      if (nameEl) nameEl.textContent = locationUnavailable ? 'Location unavailable' : 'Finding nearest stop…';
+      if (distEl) distEl.textContent = locationUnavailable ? 'Open Nearby Bus Stops to retry' : 'Using your location';
+      if (busTypeEl) busTypeEl.textContent = locationUnavailable ? 'Could not get your device location' : 'Live arrivals will appear here';
+      if (busDestEl) busDestEl.textContent = '';
+      if (etaEl) etaEl.textContent = '…';
+      return;
+    }
+
     const sortedStops = getSortedNearbyStops(1);
     if (sortedStops.length === 0) return;
 
@@ -1210,13 +1309,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const distKm = closest.distKm;
     const distStr = distKm < 1 ? `${Math.round(distKm * 1000)} m away` : `${distKm.toFixed(1)} km away`;
     const upcomingBus = closest.upcomingBus;
-
-    const nameEl = document.getElementById('home-nearby-stop-name');
-    const distEl = document.getElementById('home-nearby-stop-dist');
-    const busTypeEl = document.getElementById('home-nearby-bus-type');
-    const busDestEl = document.getElementById('home-nearby-bus-dest');
-    const etaEl = document.getElementById('home-nearby-eta');
-    const busBox = document.getElementById('home-nearby-bus-box');
 
     if (nameEl) nameEl.textContent = getStopDisplayName(st);
     if (distEl) distEl.textContent = distStr;
@@ -4685,19 +4777,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHomeFeatures();
     setupAccessibilityControls();
 
-    // Trigger initial high-accuracy GPS check
-    requestUserGpsLocation(
-      pos => {
-        renderHomeNearbyStopCard();
-        renderNearbyBusStops(pos.coords.latitude, pos.coords.longitude);
-        if (state.currentScreen === 'nearby-stops-view') {
-          renderNearbyStopsScreen();
-        }
-      },
-      err => {
-        // Quiet fallback
-      }
-    );
   }
 
   function setupHomeFeatures() {
